@@ -127,7 +127,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     const SizedBox(height: 12),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: Text(localization.translate('opacityControl')),
+                      title: Text(localization.translate('alpha')),
                       subtitle: Text(localization.translate('opacityPickerHelp')),
                     ),
                     Slider(

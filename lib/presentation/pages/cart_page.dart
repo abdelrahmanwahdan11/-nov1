@@ -53,7 +53,7 @@ class _CartPageState extends State<CartPage> {
                   const SizedBox(height: 12),
                   FilledButton(
                     onPressed: () => Navigator.of(context).pushReplacementNamed('/catalog/jewelry'),
-                    child: Text(localization.translate('goShopping')),
+                    child: Text(localization.translate('continueShopping')),
                   ),
                 ],
               ),
