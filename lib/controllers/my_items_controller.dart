@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../data/mock_data.dart';
 import '../models/jewelry_item.dart';
 import '../models/offer.dart';
+import 'notification_controller.dart';
 
 class MyItemsController extends ChangeNotifier {
   MyItemsController()
@@ -12,10 +13,15 @@ class MyItemsController extends ChangeNotifier {
   final List<JewelryItem> _myItems;
   final List<Offer> _offers;
   bool _isSubmitting = false;
+  NotificationController? _notificationController;
 
   List<JewelryItem> get myItems => List.unmodifiable(_myItems);
   List<Offer> get offers => List.unmodifiable(_offers);
   bool get isSubmitting => _isSubmitting;
+
+  void bindNotificationController(NotificationController controller) {
+    _notificationController = controller;
+  }
 
   Future<void> addItem(JewelryItem item) async {
     _isSubmitting = true;
@@ -45,16 +51,16 @@ class MyItemsController extends ChangeNotifier {
   }
 
   void simulateIncomingOffer(String itemId, double amount) {
-    _offers.add(
-      Offer(
-        id: 'mock-${DateTime.now().millisecondsSinceEpoch}',
-        itemId: itemId,
-        amount: amount,
-        message: 'New offer received',
-        createdAt: DateTime.now().millisecondsSinceEpoch,
-        from: 'collector@jewelx.app',
-      ),
+    final offer = Offer(
+      id: 'mock-${DateTime.now().millisecondsSinceEpoch}',
+      itemId: itemId,
+      amount: amount,
+      message: 'New offer received',
+      createdAt: DateTime.now().millisecondsSinceEpoch,
+      from: 'collector@jewelx.app',
     );
+    _offers.add(offer);
+    _notificationController?.pushMockOffer(offer);
     notifyListeners();
   }
 }

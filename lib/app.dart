@@ -52,6 +52,8 @@ class _JewelXAppState extends State<JewelXApp> {
   }
 
   Future<void> _initialize() async {
+    _catalogController.bindMyItems(_myItemsController);
+    _myItemsController.bindNotificationController(_notificationController);
     await Future.wait([
       _themeController.initialize(),
       _authController.initialize(),

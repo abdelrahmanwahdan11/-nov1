@@ -32,8 +32,7 @@ class _RootShellState extends State<RootShell> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _catalogController ??= ControllersScope.of(context).catalogController
-      ..loadInitial();
+    _catalogController ??= ControllersScope.of(context).catalogController;
   }
 
   @override
