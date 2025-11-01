@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:jewelx/core/i18n/app_localizations.dart';
+import '../widgets/jewel_loader.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -28,32 +29,20 @@ class _SplashPageState extends State<SplashPage> {
     final t = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              theme.colorScheme.primary.withOpacity(0.1),
-              theme.colorScheme.primaryContainer.withOpacity(0.4),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.diamond, size: 96, color: theme.colorScheme.primary),
-              const SizedBox(height: 16),
-              Text(
-                t.translate('appName'),
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
+      backgroundColor: Colors.transparent,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            JewelLoader(label: t.translate('appName')),
+            const SizedBox(height: 12),
+            Text(
+              t.translate('pullToRefresh'),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

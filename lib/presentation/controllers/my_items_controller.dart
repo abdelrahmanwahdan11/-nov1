@@ -45,6 +45,42 @@ class MyItemsController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> bulkAddFromUrls(List<String> imageUrls) async {
+    if (imageUrls.isEmpty) return;
+    _isSubmitting = true;
+    notifyListeners();
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    for (var i = 0; i < imageUrls.length; i++) {
+      final url = imageUrls[i];
+      final item = JewelryItem(
+        id: 'bulk-$timestamp-$i',
+        name: 'Collector piece ${_myItems.length + i + 1}',
+        brand: 'Private',
+        category: JewelryCategory.ring,
+        images: [url],
+        model3d: 'https://example.com/models/ring.glb',
+        material: JewelryMaterial.gold,
+        gem: 'Gemstone',
+        carat: 1,
+        weightGrams: 3,
+        ringSize: '42',
+        color: 'G',
+        condition: JewelryCondition.veryGood,
+        certificate: '',
+        price: null,
+        negotiable: true,
+        forSale: false,
+        awaitOffers: true,
+        tips: 'Handle with care',
+        description: 'Imported via bulk uploader.',
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+      );
+      _myItems.add(item);
+    }
+    _isSubmitting = false;
+    notifyListeners();
+  }
+
   void toggleSaleState(String id, {required bool forSale, required bool awaitOffers}) {
     final index = _myItems.indexWhere((element) => element.id == id);
     if (index == -1) return;

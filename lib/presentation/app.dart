@@ -12,6 +12,7 @@ import 'controllers/controllers_scope.dart';
 import 'controllers/messages_controller.dart';
 import 'controllers/my_items_controller.dart';
 import 'controllers/notification_controller.dart';
+import 'controllers/scroll_memory.dart';
 import 'package:jewelx/core/i18n/app_localizations.dart';
 import 'pages/auth/forgot_password_page.dart';
 import 'pages/auth/sign_in_page.dart';
@@ -35,6 +36,8 @@ import 'pages/splash_page.dart';
 import 'package:jewelx/core/theme/app_theme.dart';
 import 'pages/onboarding_page.dart';
 import 'pages/checkout_page.dart';
+import 'pages/state_screen.dart';
+import 'widgets/jewel_loader.dart';
 
 class JewelXApp extends StatefulWidget {
   const JewelXApp({super.key});
@@ -54,6 +57,7 @@ class _JewelXAppState extends State<JewelXApp> {
   final MessagesController _messagesController = MessagesController();
   final NotificationController _notificationController = NotificationController();
   final SavedSearchesController _savedSearchesController = SavedSearchesController();
+  final ScrollMemory _scrollMemory = ScrollMemory();
   bool _initialized = false;
 
   @override
@@ -74,6 +78,7 @@ class _JewelXAppState extends State<JewelXApp> {
       _catalogController.initialize(),
       _messagesController.loadFromPrefs(),
       _savedSearchesController.initialize(),
+      _scrollMemory.initialize(),
     ]);
     setState(() => _initialized = true);
   }
@@ -90,13 +95,29 @@ class _JewelXAppState extends State<JewelXApp> {
     _messagesController.dispose();
     _notificationController.dispose();
     _savedSearchesController.dispose();
+    _scrollMemory.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     if (!_initialized) {
-      return const MaterialApp(home: SizedBox.shrink());
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFFFE1EA), Color(0xFFFFC7D1)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: Center(child: JewelLoader()),
+          ),
+        ),
+      );
     }
     return ControllersScope(
       appController: _appController,
@@ -109,6 +130,7 @@ class _JewelXAppState extends State<JewelXApp> {
       messagesController: _messagesController,
       notificationController: _notificationController,
       savedSearchesController: _savedSearchesController,
+      scrollMemory: _scrollMemory,
       child: AnimatedBuilder(
         animation: _appController,
         builder: (context, _) {
@@ -151,6 +173,9 @@ class _JewelXAppState extends State<JewelXApp> {
               SavedSearchesPage.routeName: (context) => const SavedSearchesPage(),
               '/my-items': (context) => const MyItemsPage(),
               '/profile': (context) => const ProfilePage(),
+              '/state/empty': (context) => const JewelStateScreen(variant: JewelStateVariant.empty),
+              '/state/error': (context) => const JewelStateScreen(variant: JewelStateVariant.error),
+              '/state/offline': (context) => const JewelStateScreen(variant: JewelStateVariant.offline),
             },
             onGenerateRoute: (settings) {
               if (settings.name == DetailsPage.routeName) {

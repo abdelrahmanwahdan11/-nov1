@@ -149,48 +149,102 @@ class _MyItemsPageState extends State<MyItemsPage> with SingleTickerProviderStat
                     keyboardType: TextInputType.number,
                   ),
                   const SizedBox(height: 20),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: FilledButton(
-                      onPressed: () async {
-                        if (!formKey.currentState!.validate()) return;
-                        final item = JewelryItem(
-                          id: DateTime.now().millisecondsSinceEpoch.toString(),
-                          name: nameController.text,
-                          brand: 'Private',
-                          category: JewelryCategory.ring,
-                          images: const ['https://picsum.photos/seed/myitem/400/400'],
-                          model3d: 'https://example.com/models/ring.glb',
-                          material: JewelryMaterial.gold,
-                          gem: 'Diamond',
-                          carat: 1.0,
-                          weightGrams: 3.2,
-                          ringSize: '42',
-                          color: 'G',
-                          condition: JewelryCondition.veryGood,
-                          certificate: '',
-                          price: priceController.text.isEmpty
-                              ? null
-                              : double.tryParse(priceController.text),
-                          negotiable: true,
-                          forSale: priceController.text.isNotEmpty,
-                          awaitOffers: priceController.text.isEmpty,
-                          tips: localization.translate('tips'),
-                          description: localization.translate('details'),
-                          createdAt: DateTime.now().millisecondsSinceEpoch,
-                        );
-                        await controller.addItem(item);
-                        if (context.mounted) {
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      child: Text(localization.translate('addItem')),
-                    ),
+                  Row(
+                    children: [
+                      TextButton.icon(
+                        onPressed: () async {
+                          final urls = await _promptBulkAdd(context, localization);
+                          if (urls == null || urls.isEmpty) return;
+                          await controller.bulkAddFromUrls(urls);
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                          }
+                        },
+                        icon: const Icon(Icons.playlist_add),
+                        label: Text(localization.translate('bulkAddFromUrls')),
+                      ),
+                      const Spacer(),
+                      FilledButton(
+                        onPressed: () async {
+                          if (!formKey.currentState!.validate()) return;
+                          final item = JewelryItem(
+                            id: DateTime.now().millisecondsSinceEpoch.toString(),
+                            name: nameController.text,
+                            brand: 'Private',
+                            category: JewelryCategory.ring,
+                            images: const ['https://picsum.photos/seed/myitem/400/400'],
+                            model3d: 'https://example.com/models/ring.glb',
+                            material: JewelryMaterial.gold,
+                            gem: 'Diamond',
+                            carat: 1.0,
+                            weightGrams: 3.2,
+                            ringSize: '42',
+                            color: 'G',
+                            condition: JewelryCondition.veryGood,
+                            certificate: '',
+                            price: priceController.text.isEmpty
+                                ? null
+                                : double.tryParse(priceController.text),
+                            negotiable: true,
+                            forSale: priceController.text.isNotEmpty,
+                            awaitOffers: priceController.text.isEmpty,
+                            tips: localization.translate('tips'),
+                            description: localization.translate('details'),
+                            createdAt: DateTime.now().millisecondsSinceEpoch,
+                          );
+                          await controller.addItem(item);
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                          }
+                        },
+                        child: Text(localization.translate('addItem')),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Future<List<String>?> _promptBulkAdd(
+    BuildContext context,
+    AppLocalizations localization,
+  ) async {
+    final controller = TextEditingController();
+    return showDialog<List<String>?>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(localization.translate('bulkAddFromUrls')),
+          content: TextField(
+            controller: controller,
+            minLines: 4,
+            maxLines: 8,
+            decoration: const InputDecoration(
+              hintText: 'https://example.com/item1.jpg\nhttps://example.com/item2.jpg',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(localization.translate('cancel')),
+            ),
+            FilledButton(
+              onPressed: () {
+                final entries = controller.text
+                    .split(RegExp(r'\s+'))
+                    .map((e) => e.trim())
+                    .where((element) => element.isNotEmpty)
+                    .toList();
+                Navigator.of(context).pop(entries);
+              },
+              child: Text(localization.translate('addItem')),
+            ),
+          ],
         );
       },
     );

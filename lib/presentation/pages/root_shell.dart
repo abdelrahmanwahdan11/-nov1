@@ -7,8 +7,8 @@ import 'package:jewelx/core/theme/app_theme.dart';
 import 'catalog_page.dart';
 import 'favorites_page.dart';
 import 'home_dashboard_page.dart';
+import 'my_items_page.dart';
 import 'profile_page.dart';
-import 'search_page.dart';
 
 class RootShell extends StatefulWidget {
   const RootShell({super.key});
@@ -23,7 +23,7 @@ class _RootShellState extends State<RootShell> {
   final _pages = const [
     HomeDashboardPage(),
     CatalogPage(),
-    SearchPage(),
+    MyItemsPage(),
     FavoritesPage(),
     ProfilePage(),
   ];
@@ -39,7 +39,7 @@ class _RootShellState extends State<RootShell> {
     final titles = [
       t.translate('home'),
       t.translate('catalog'),
-      t.translate('search'),
+      t.translate('myItems'),
       t.translate('favorites'),
       t.translate('profile'),
     ];
@@ -54,6 +54,11 @@ class _RootShellState extends State<RootShell> {
         ),
         centerTitle: false,
         actions: [
+          _RoundedAction(
+            icon: IconlyBold.search,
+            onTap: () => Navigator.of(context).pushNamed('/search'),
+          ),
+          const SizedBox(width: 12),
           AnimatedBuilder(
             animation: cart,
             builder: (context, _) {
@@ -106,11 +111,8 @@ class _RootShellState extends State<RootShell> {
             onDestinationSelected: (value) => setState(() => _index = value),
             destinations: [
               NavigationDestination(icon: const Icon(IconlyBold.home), label: t.translate('home')),
-              NavigationDestination(
-                icon: const Icon(IconlyBold.category),
-                label: t.translate('catalog'),
-              ),
-              NavigationDestination(icon: const Icon(IconlyBold.search), label: t.translate('search')),
+              NavigationDestination(icon: const Icon(IconlyBold.category), label: t.translate('catalog')),
+              NavigationDestination(icon: const Icon(Icons.collections_bookmark_rounded), label: t.translate('myItems')),
               NavigationDestination(icon: const Icon(IconlyBold.heart), label: t.translate('favorites')),
               NavigationDestination(icon: const Icon(IconlyBold.profile), label: t.translate('profile')),
             ],

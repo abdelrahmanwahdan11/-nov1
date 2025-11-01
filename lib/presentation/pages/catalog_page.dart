@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../controllers/catalog_controller.dart';
 import '../controllers/compare_controller.dart';
 import '../controllers/controllers_scope.dart';
+import '../controllers/scroll_memory.dart';
 import 'package:jewelx/core/i18n/app_localizations.dart';
 import 'package:jewelx/domain/models/jewelry_item.dart';
 import 'package:jewelx/core/theme/app_theme.dart';
@@ -17,11 +18,16 @@ class CatalogPage extends StatefulWidget {
   State<CatalogPage> createState() => _CatalogPageState();
 }
 
-class _CatalogPageState extends State<CatalogPage> {
+class _CatalogPageState extends State<CatalogPage> with AutomaticKeepAliveClientMixin {
   static const double _compareBarHeight = 72;
 
   CatalogController? _catalog;
   CompareController? _compare;
+  ScrollMemory? _scrollMemory;
+  late final ScrollController _scrollController;
+  bool _controllerReady = false;
+  bool _showBackToTop = false;
+  double _lastPersistedOffset = 0;
 
   @override
   void didChangeDependencies() {
@@ -29,14 +35,40 @@ class _CatalogPageState extends State<CatalogPage> {
     final scope = ControllersScope.of(context);
     _catalog ??= scope.catalogController;
     _compare ??= scope.compareController;
+    if (!_controllerReady) {
+      _scrollMemory = scope.scrollMemory;
+      final savedOffset = _scrollMemory?.getOffset('catalog:jewelry') ?? 0;
+      _scrollController = ScrollController(initialScrollOffset: savedOffset);
+      _scrollController.addListener(_handleScroll);
+      _controllerReady = true;
+      _lastPersistedOffset = savedOffset;
+      if (savedOffset > 360) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() => _showBackToTop = true);
+          }
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_controllerReady) {
+      _scrollController.removeListener(_handleScroll);
+      _scrollController.dispose();
+    }
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final catalog = _catalog!;
     final compare = _compare!;
     final listenable = Listenable.merge([catalog, compare]);
     final localization = AppLocalizations.of(context);
+    final backToTopLabel = localization.translate('backToTop');
 
     return AnimatedBuilder(
       animation: listenable,
@@ -52,19 +84,10 @@ class _CatalogPageState extends State<CatalogPage> {
             RefreshIndicator(
               onRefresh: catalog.refresh,
               edgeOffset: 0,
-              child: NotificationListener<ScrollNotification>(
-                onNotification: (notification) {
-                  if (notification.metrics.pixels >=
-                          notification.metrics.maxScrollExtent - 200 &&
-                      !catalog.isLoading &&
-                      catalog.hasMore) {
-                    catalog.loadMore();
-                  }
-                  return false;
-                },
-                child: CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                slivers: [
                     SliverPersistentHeader(
                       pinned: true,
                       delegate: _PinnedHeaderDelegate(
@@ -79,7 +102,7 @@ class _CatalogPageState extends State<CatalogPage> {
                       ),
                     ),
                     if (isLoading && items.isEmpty)
-                      _buildSkeletonGrid(showCompareBar)
+                      _buildSkeletonGrid(context, showCompareBar)
                     else if (items.isEmpty)
                       SliverFillRemaining(
                         hasScrollBody: false,
@@ -134,11 +157,60 @@ class _CatalogPageState extends State<CatalogPage> {
                       Navigator.of(context).pushNamed('/compare/jewelry'),
                 ),
               ),
+            Positioned(
+              right: 24,
+              bottom: 24 + MediaQuery.of(context).padding.bottom + (showCompareBar ? _compareBarHeight : 0),
+              child: AnimatedSlide(
+                offset: _showBackToTop ? Offset.zero : const Offset(0, 0.3),
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 220),
+                  opacity: _showBackToTop ? 1 : 0,
+                  child: IgnorePointer(
+                    ignoring: !_showBackToTop,
+                    child: FilledButton.tonalIcon(
+                      onPressed: () => _scrollController.animateTo(
+                        0,
+                        duration: const Duration(milliseconds: 420),
+                        curve: Curves.easeOutCubic,
+                      ),
+                      icon: const Icon(Icons.arrow_upward_rounded),
+                      label: Text(backToTopLabel),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ],
         );
       },
     );
   }
+
+  void _handleScroll() {
+    if (!_scrollController.hasClients) return;
+    final offset = _scrollController.offset;
+    if ((offset - _lastPersistedOffset).abs() > 16) {
+      _lastPersistedOffset = offset;
+      _scrollMemory?.save('catalog:jewelry', offset);
+    }
+    final shouldShow = offset > 360;
+    if (shouldShow != _showBackToTop) {
+      setState(() => _showBackToTop = shouldShow);
+    }
+    final catalog = _catalog;
+    if (catalog != null &&
+        _scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
+        !catalog.isLoading &&
+        catalog.hasMore) {
+      catalog.loadMore();
+    }
+  }
+
+  @override
+  bool get wantKeepAlive => true;
 
   SliverPadding _buildCatalogGrid(
     BuildContext context,
@@ -149,14 +221,20 @@ class _CatalogPageState extends State<CatalogPage> {
     bool showCompareBar,
   ) {
     final theme = Theme.of(context);
+    final columns = _gridColumns(context);
+    final aspectRatio = columns == 1
+        ? 1.2
+        : columns == 3
+            ? 0.72
+            : 0.68;
     return SliverPadding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, showCompareBar ? _compareBarHeight + 24 : 16),
       sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columns,
           mainAxisSpacing: 16,
           crossAxisSpacing: 16,
-          childAspectRatio: 0.68,
+          childAspectRatio: aspectRatio,
         ),
         delegate: SliverChildBuilderDelegate(
           (context, index) {
@@ -175,15 +253,21 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
-  SliverPadding _buildSkeletonGrid(bool showCompareBar) {
+  SliverPadding _buildSkeletonGrid(BuildContext context, bool showCompareBar) {
+    final columns = _gridColumns(context);
+    final aspectRatio = columns == 1
+        ? 1.2
+        : columns == 3
+            ? 0.72
+            : 0.68;
     return SliverPadding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, showCompareBar ? _compareBarHeight + 24 : 16),
       sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columns,
           mainAxisSpacing: 16,
           crossAxisSpacing: 16,
-          childAspectRatio: 0.68,
+          childAspectRatio: aspectRatio,
         ),
         delegate: SliverChildBuilderDelegate(
           (context, index) => const _SkeletonCard(),
@@ -191,6 +275,13 @@ class _CatalogPageState extends State<CatalogPage> {
         ),
       ),
     );
+  }
+
+  int _gridColumns(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width >= 720) return 3;
+    if (width >= 400) return 2;
+    return 1;
   }
 
   Future<void> _openFiltersSheet(

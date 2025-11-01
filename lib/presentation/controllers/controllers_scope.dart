@@ -10,6 +10,7 @@ import 'compare_controller.dart';
 import 'messages_controller.dart';
 import 'my_items_controller.dart';
 import 'notification_controller.dart';
+import 'scroll_memory.dart';
 
 class ControllersScope extends InheritedWidget {
   const ControllersScope({
@@ -23,6 +24,7 @@ class ControllersScope extends InheritedWidget {
     required this.checkoutController,
     required this.messagesController,
     required this.notificationController,
+    required this.scrollMemory,
     required this.savedSearchesController,
     required super.child,
   });
@@ -37,6 +39,7 @@ class ControllersScope extends InheritedWidget {
   final MessagesController messagesController;
   final NotificationController notificationController;
   final SavedSearchesController savedSearchesController;
+  final ScrollMemory scrollMemory;
 
   static ControllersScope of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<ControllersScope>();
@@ -55,6 +58,7 @@ class ControllersScope extends InheritedWidget {
         checkoutController != oldWidget.checkoutController ||
         messagesController != oldWidget.messagesController ||
         notificationController != oldWidget.notificationController ||
-        savedSearchesController != oldWidget.savedSearchesController;
+        savedSearchesController != oldWidget.savedSearchesController ||
+        scrollMemory != oldWidget.scrollMemory;
   }
 }
