@@ -1,7 +1,7 @@
 name: jewelx
-description: "سوق مجوهرات (جديد/مستعمل) مع 3D، ثيم وردي–خوخي مطابق للصورة، سلة وCheckout محلي، تواصل مع البائع، مقارنة، فلاتر، بحث شامل، Dark Mode، ولغتين AR/EN."
+description: "Marketplace for new & pre-owned jewelry with pink–peach theme, bilingual AR/EN, offline cart & checkout, messaging, compare, filters, shimmer skeletons, tutorial coach marks, 3D viewer, saved searches, and responsive layouts."
 publish_to: 'none'
-version: 5.0.0+1
+version: 6.0.0+1
 
 environment:
   sdk: '>=3.9.0 <4.0.0'
@@ -16,8 +16,14 @@ dependencies:
   shared_preferences: ^2.2.2
   iconly: ^1.0.1
   flutter_3d_controller: ^0.0.1
-  flutter_animate: 4.5.2
+  flutter_animate: ^4.5.2
   tutorial_coach_mark: ^1.2.11
+  intl: ^0.19.0
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+  url_launcher: ^6.3.0
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
 
 dev_dependencies:
   flutter_test:
