@@ -1,0 +1,412 @@
+import 'dart:ui';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+import '../controllers/controllers_scope.dart';
+import '../l10n/app_localizations.dart';
+import '../models/jewelry_item.dart';
+import '../theme/app_theme.dart';
+
+class DetailsPage extends StatelessWidget {
+  const DetailsPage({super.key});
+
+  static const routeName = '/details';
+
+  @override
+  Widget build(BuildContext context) {
+    final item = ModalRoute.of(context)?.settings.arguments as JewelryItem?;
+    if (item == null) {
+      return const Scaffold(body: Center(child: Text('No item provided')));
+    }
+    final scope = ControllersScope.of(context);
+    final catalog = scope.catalogController;
+    final compare = scope.compareController;
+    final theme = Theme.of(context);
+    final tokens = theme.extension<JewelThemeTokens>();
+    final localization = AppLocalizations.of(context);
+    final listenable = Listenable.merge([catalog, compare]);
+
+    return AnimatedBuilder(
+      animation: listenable,
+      builder: (context, _) {
+        final isFavorite = catalog.favorites.contains(item.id);
+        final isCompared = compare.selectedIds.contains(item.id);
+        return Scaffold(
+          extendBodyBehindAppBar: true,
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: const BackButton(),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.share_outlined),
+                onPressed: () {},
+              ),
+              const SizedBox(width: 8),
+            ],
+          ),
+          body: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: _GalleryHeader(item: item, tokens: tokens, localization: localization),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.name,
+                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        item.brand,
+                        style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.primary),
+                      ),
+                      const SizedBox(height: 20),
+                      _SpecsGrid(item: item, localization: localization),
+                      const SizedBox(height: 24),
+                      _RingSizesSection(localization: localization),
+                      const SizedBox(height: 16),
+                      _MetalSwatches(localization: localization),
+                      const SizedBox(height: 24),
+                      _ThreeDPreview(tokens: tokens),
+                      const SizedBox(height: 24),
+                      Text(
+                        localization.translate('details'),
+                        style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(item.description, style: theme.textTheme.bodyLarge),
+                      const SizedBox(height: 120),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          bottomNavigationBar: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: tokens?.ctaBlack ?? Colors.black,
+                  borderRadius: BorderRadius.circular(tokens?.cardRadius ?? 26),
+                ),
+                child: Row(
+                  children: [
+                    _BottomAction(
+                      icon: isFavorite ? Icons.favorite : Icons.favorite_border,
+                      label: localization.translate('favorites'),
+                      onTap: () => catalog.toggleFavorite(item.id),
+                      active: isFavorite,
+                    ),
+                    const SizedBox(width: 12),
+                    _BottomAction(
+                      icon: Icons.compare_arrows,
+                      label: localization.translate('compare'),
+                      onTap: () => compare.toggle(item.id),
+                      active: isCompared,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () {},
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(tokens?.pillRadius ?? 18),
+                          ),
+                        ),
+                        child: Text(localization.translate('addToCart')),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _GalleryHeader extends StatelessWidget {
+  const _GalleryHeader({required this.item, required this.tokens, required this.localization});
+
+  final JewelryItem item;
+  final JewelThemeTokens? tokens;
+  final AppLocalizations localization;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 380,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: PageView.builder(
+              itemCount: item.images.length,
+              itemBuilder: (context, index) {
+                final image = item.images[index];
+                return Hero(
+                  tag: 'catalog-${item.id}',
+                  child: Image.network(image, fit: BoxFit.cover),
+                );
+              },
+            ),
+          ),
+          Positioned(
+            left: 20,
+            bottom: 20,
+            child: _GalleryLabel(tokens: tokens, text: localization.translate('sizeGuide')),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GalleryLabel extends StatelessWidget {
+  const _GalleryLabel({required this.tokens, required this.text});
+
+  final JewelThemeTokens? tokens;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.black54,
+        borderRadius: BorderRadius.circular(tokens?.pillRadius ?? 18),
+      ),
+      child: Text(
+        text,
+        style: theme.textTheme.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
+class _SpecsGrid extends StatelessWidget {
+  const _SpecsGrid({required this.item, required this.localization});
+
+  final JewelryItem item;
+  final AppLocalizations localization;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final specs = <String, String>{
+      localization.translate('material'): item.material.name,
+      localization.translate('gem'): item.gem,
+      localization.translate('carat'): item.carat.toStringAsFixed(2),
+      localization.translate('weight'): '${item.weightGrams} g',
+      localization.translate('condition'): item.condition.name,
+    };
+
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: specs.entries
+          .map(
+            (entry) => _ChipBadge(
+              label: entry.key,
+              value: entry.value,
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class _ChipBadge extends StatelessWidget {
+  const _ChipBadge({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = theme.extension<JewelThemeTokens>();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(tokens?.pillRadius ?? 18),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.primary)),
+          const SizedBox(height: 4),
+          Text(value, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
+class _RingSizesSection extends StatelessWidget {
+  const _RingSizesSection({required this.localization});
+
+  final AppLocalizations localization;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = theme.extension<JewelThemeTokens>();
+    final sizes = ['41', '42', '43', '44', '45'];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(localization.translate('sizes'), style: theme.textTheme.titleMedium),
+            TextButton(
+              onPressed: () {},
+              child: Text(localization.translate('viewSizeGuide')),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          children: sizes
+              .map(
+                (size) => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(tokens?.pillRadius ?? 18),
+                    color: theme.colorScheme.surface.withOpacity(0.7),
+                  ),
+                  child: Text(size, style: theme.textTheme.bodyMedium),
+                ),
+              )
+              .toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _MetalSwatches extends StatelessWidget {
+  const _MetalSwatches({required this.localization});
+
+  final AppLocalizations localization;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = [
+      Colors.amber[200]!,
+      Colors.grey[300]!,
+      Colors.pink[100]!,
+      Colors.blueGrey[200]!,
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(localization.translate('metalColor'), style: theme.textTheme.titleMedium),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          children: colors
+              .map(
+                (color) => Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [color, color.withOpacity(0.6)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, 4)),
+                    ],
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _ThreeDPreview extends StatelessWidget {
+  const _ThreeDPreview({required this.tokens});
+
+  final JewelThemeTokens? tokens;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      height: 160,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(tokens?.cardRadius ?? 26),
+        color: theme.colorScheme.surface.withOpacity(0.6),
+      ),
+      child: Center(
+        child: Text(
+          '3D Viewer placeholder',
+          style: theme.textTheme.bodyLarge?.copyWith(fontStyle: FontStyle.italic),
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomAction extends StatelessWidget {
+  const _BottomAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.active = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            backgroundColor: Colors.white.withOpacity(active ? 0.9 : 0.2),
+            child: Icon(icon, color: active ? Colors.redAccent : Colors.white),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white70),
+          ),
+        ],
+      ),
+    );
+  }
+}

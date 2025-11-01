@@ -1,0 +1,214 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+
+class AppLocalizations {
+  AppLocalizations(this.locale);
+
+  final Locale locale;
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
+  static const supportedLocales = [Locale('ar'), Locale('en')];
+
+  static const _localizedValues = <String, Map<String, String>>{
+    'ar': {
+      'appName': 'جويل إكس',
+      'skip': 'تخطي',
+      'next': 'التالي',
+      'getStarted': 'ابدأ الآن',
+      'signIn': 'تسجيل الدخول',
+      'signUp': 'إنشاء حساب',
+      'guest': 'الدخول كضيف',
+      'email': 'البريد الإلكتروني',
+      'password': 'كلمة المرور',
+      'showPassword': 'إظهار',
+      'hidePassword': 'إخفاء',
+      'forgotPassword': 'نسيت كلمة المرور؟',
+      'home': 'الرئيسية',
+      'catalog': 'الكتالوج',
+      'search': 'بحث',
+      'favorites': 'مفضلة',
+      'cart': 'السلة',
+      'profile': 'حسابي',
+      'settings': 'الإعدادات',
+      'language': 'اللغة',
+      'theme': 'المظهر',
+      'darkMode': 'الوضع الليلي',
+      'primaryColor': 'اللون الرئيسي',
+      'brands': 'الماركات',
+      'newArrivals': 'وصل حديثاً',
+      'offers': 'عروض',
+      'aiInfo': 'معلومة بالذكاء الاصطناعي',
+      'sizes': 'المقاسات',
+      'ringSize': 'مقاس الخاتم',
+      'carat': 'قيراط',
+      'weight': 'الوزن',
+      'material': 'المعدن',
+      'gem': 'الحجر',
+      'condition': 'الحالة',
+      'price': 'السعر',
+      'negotiable': 'قابل للتفاوض',
+      'addToCart': 'أضف إلى السلة',
+      'compare': 'مقارنة',
+      'compareNow': 'قارن الآن',
+      'pullToRefresh': 'اسحب للتحديث',
+      'myItems': 'مقتنياتي',
+      'addItem': 'إضافة عنصر',
+      'sellNow': 'عرض للبيع',
+      'awaitOffers': 'انتظار عروض',
+      'tips': 'نصائح',
+      'repairs': 'إصلاحات مقترحة',
+      'notifications': 'إشعارات',
+      'receivedOffer': 'تم استلام عرض',
+      'noPriceShown': 'بدون سعر معلن',
+      'filters': 'فلاتر',
+      'sortBy': 'ترتيب حسب',
+      'sortPriceLowHigh': 'السعر: من الأقل إلى الأعلى',
+      'sortPriceHighLow': 'السعر: من الأعلى إلى الأقل',
+      'sortNewest': 'الأحدث أولاً',
+      'ring': 'خاتم',
+      'necklace': 'قلادة',
+      'bracelet': 'سوار',
+      'earring': 'قرط',
+      'metalColor': 'لون المعدن',
+      'gold': 'ذهب',
+      'silver': 'فضة',
+      'roseGold': 'ذهب وردي',
+      'platinum': 'بلاتين',
+      'apply': 'تطبيق',
+      'reset': 'إعادة ضبط',
+      'details': 'التفاصيل',
+      'more': 'المزيد',
+      'seeAll': 'عرض الكل',
+      'sizeGuide': 'دليل المقاسات',
+      'searchHint': 'ابحث بالاسم، الحجر، العيار، الوصف…',
+      'carCatalog': 'كتالوج السيارات',
+      'carCompare': 'مقارنة السيارات',
+      'emptyCatalog': 'لا توجد عناصر مطابقة حالياً',
+      'themeUpdated': 'تم تحديث المظهر',
+      'languageUpdated': 'تم تغيير اللغة',
+      'tutorial': 'جولة توجيهية',
+      'resetDemoData': 'إعادة تعيين بيانات العرض',
+      'viewSizeGuide': 'عرض دليل المقاسات',
+      'aiInsightDescription':
+          'سيتم لاحقًا استخدام الذكاء الاصطناعي لشرح مواصفات الحجر والمعدن.',
+      'ok': 'حسنًا',
+      'showTutorialAgain': 'إعادة عرض الشرح',
+      'demoDataReset': 'تمت إعادة ضبط بيانات العرض.',
+      'tutorialReset': 'سيظهر الشرح التفاعلي عند التشغيل التالي.',
+    },
+    'en': {
+      'appName': 'JewelX',
+      'skip': 'Skip',
+      'next': 'Next',
+      'getStarted': 'Get Started',
+      'signIn': 'Sign In',
+      'signUp': 'Create Account',
+      'guest': 'Continue as Guest',
+      'email': 'Email',
+      'password': 'Password',
+      'showPassword': 'Show',
+      'hidePassword': 'Hide',
+      'forgotPassword': 'Forgot Password?',
+      'home': 'Home',
+      'catalog': 'Catalog',
+      'search': 'Search',
+      'favorites': 'Favorites',
+      'cart': 'Cart',
+      'profile': 'Profile',
+      'settings': 'Settings',
+      'language': 'Language',
+      'theme': 'Theme',
+      'darkMode': 'Dark Mode',
+      'primaryColor': 'Primary Color',
+      'brands': 'Brands',
+      'newArrivals': 'New Arrivals',
+      'offers': 'Offers',
+      'aiInfo': 'AI Insight',
+      'sizes': 'Sizes',
+      'ringSize': 'Ring Size',
+      'carat': 'Carat',
+      'weight': 'Weight',
+      'material': 'Metal',
+      'gem': 'Gemstone',
+      'condition': 'Condition',
+      'price': 'Price',
+      'negotiable': 'Negotiable',
+      'addToCart': 'Add to Cart',
+      'compare': 'Compare',
+      'compareNow': 'Compare Now',
+      'pullToRefresh': 'Pull to refresh',
+      'myItems': 'My Items',
+      'addItem': 'Add Item',
+      'sellNow': 'List for Sale',
+      'awaitOffers': 'Await Offers',
+      'tips': 'Tips',
+      'repairs': 'Suggested Repairs',
+      'notifications': 'Notifications',
+      'receivedOffer': 'Received Offer',
+      'noPriceShown': 'No public price',
+      'filters': 'Filters',
+      'sortBy': 'Sort by',
+      'sortPriceLowHigh': 'Price: Low to High',
+      'sortPriceHighLow': 'Price: High to Low',
+      'sortNewest': 'Newest first',
+      'ring': 'Ring',
+      'necklace': 'Necklace',
+      'bracelet': 'Bracelet',
+      'earring': 'Earring',
+      'metalColor': 'Metal color',
+      'gold': 'Gold',
+      'silver': 'Silver',
+      'roseGold': 'Rose Gold',
+      'platinum': 'Platinum',
+      'apply': 'Apply',
+      'reset': 'Reset',
+      'details': 'Details',
+      'more': 'More',
+      'seeAll': 'See All',
+      'sizeGuide': 'Size Guide',
+      'searchHint': 'Search by name, gem, carat, description…',
+      'carCatalog': 'Car Catalog',
+      'carCompare': 'Car Compare',
+      'emptyCatalog': 'No items match your filters yet',
+      'themeUpdated': 'Theme updated',
+      'languageUpdated': 'Language updated',
+      'tutorial': 'Tutorial',
+      'resetDemoData': 'Reset demo data',
+      'viewSizeGuide': 'View size guide',
+      'aiInsightDescription':
+          'AI will soon describe gemstone and metal characteristics here.',
+      'ok': 'OK',
+      'showTutorialAgain': 'Replay walkthrough',
+      'demoDataReset': 'Demo data has been refreshed.',
+      'tutorialReset': 'Tutorial will show again next launch.',
+    },
+  };
+
+  String translate(String key) {
+    return _localizedValues[locale.languageCode]?[key] ??
+        _localizedValues['en']![key] ?? key;
+  }
+
+  static AppLocalizations of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
+  }
+}
+
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
+
+  @override
+  bool isSupported(Locale locale) =>
+      AppLocalizations.supportedLocales.contains(Locale(locale.languageCode));
+
+  @override
+  Future<AppLocalizations> load(Locale locale) async {
+    return AppLocalizations(locale);
+  }
+
+  @override
+  bool shouldReload(LocalizationsDelegate<AppLocalizations> old) => false;
+}

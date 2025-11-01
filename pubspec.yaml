@@ -1,0 +1,27 @@
+name: jewelx
+description: "سوق مجوهرات جديدة ومستعملة مع عارض 3D، انتقالات Material، Skeletons، بحث/فلاتر/مقارنة، إضافة مقتنيات شخصية، وثيم وردي-خوخي."
+publish_to: 'none'
+version: 4.0.0+1
+
+environment:
+  sdk: '>=3.16.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  google_fonts: ^6.2.1
+  shared_preferences: ^2.2.2
+  iconly: ^1.0.1
+  flutter_3d_controller: ^0.0.1
+  animations: ^2.0.11
+  tutorial_coach_mark: ^1.2.11
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
