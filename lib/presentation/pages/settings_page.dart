@@ -33,7 +33,11 @@ class _SettingsPageState extends State<SettingsPage> {
     final theme = Theme.of(context);
     final tokens = theme.extension<JewelThemeTokens>();
 
-    final palette = appController.similarPalette();
+    final presetPalette = appController.presetPalette();
+    final palette = {
+      for (final color in [...presetPalette, ...appController.similarPalette()])
+        color.value: color,
+    }.values.toList();
 
     return Scaffold(
       appBar: AppBar(title: Text(localization.translate('settings'))),
@@ -92,7 +96,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       value: appController.isDark,
-                      onChanged: (_) => appController.toggleDarkMode(),
+                      onChanged: (value) => appController.setDark(value),
                       title: Text(localization.translate('darkMode')),
                       secondary: const Icon(Icons.nightlight_round),
                     ),
@@ -109,10 +113,12 @@ class _SettingsPageState extends State<SettingsPage> {
                         for (final color in palette)
                           _ColorOption(
                             color: color,
-                            selected: color.value == appController.primaryColor.withOpacity(1).value,
+                            selected: color.value == appController.seedColor.value,
                             onTap: () {
                               setState(() {});
-                              appController.setPrimary(color.withOpacity(_alphaSlider));
+                              appController
+                                ..setSeed(color)
+                                ..setAlpha(_alphaSlider);
                             },
                             tokens: tokens,
                           ),
@@ -132,7 +138,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       label: _alphaSlider.toStringAsFixed(2),
                       onChanged: (value) {
                         setState(() => _alphaSlider = value);
-                        appController.setPrimaryOpacity(value);
+                        appController.setAlpha(value);
                       },
                     ),
                     Wrap(

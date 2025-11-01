@@ -1,7 +1,7 @@
 name: jewelx
-description: "سوق مجوهرات (جديد/مستعمل) بثيم وردي–خوخي مطابق للصورة، ثنائي اللغة، Dark Mode، أنيميشن شامل، Smooth-Scroll مع حفظ الموضع، زر العودة للأعلى، 3D viewer، سلة وCheckout محلي، رسائل مع البائع، Saved Searches، Price Alerts، وحالات خطأ/فراغ/تعذر اتصال — دون أي باك-إند."
+description: "سوق مجوهرات (جديد/مستعمل) بثيم وردي–خوخي إلزامي، ثنائي اللغة، Dark Mode، 3D viewer، Smooth-Scroll مع حفظ الموضع، Back-to-Top، تلاشي AppBar أثناء السحب، كتالوج مصحح، إعدادات مفعلة بالكامل، سلة وCheckout مع صفحة نجاح، مقارنة من الشريط العلوي، وبيانات Mock وافرة — دون أي باك-إند."
 publish_to: 'none'
-version: 7.0.0+1
+version: 8.0.0+1
 
 environment:
   sdk: '>=3.9.0 <4.0.0'

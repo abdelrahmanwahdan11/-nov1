@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../controllers/controllers_scope.dart';
 import 'package:jewelx/core/i18n/app_localizations.dart';
 import 'package:jewelx/core/theme/app_theme.dart';
+import 'order_success_page.dart';
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -184,16 +185,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   );
                   return;
                 }
-                await checkout.placeOrderMock();
+                final orderId = await checkout.placeOrderMock();
                 cart.clear();
                 checkout.saveAddress({});
                 checkout.saveContact({});
                 checkout.saveNotes('');
                 if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(localization.translate('orderSuccess'))),
+                Navigator.of(context).pushReplacementNamed(
+                  OrderSuccessPage.routeName,
+                  arguments: orderId,
                 );
-                Navigator.of(context).popUntil((route) => route.settings.name == '/home' || route.isFirst);
               },
               child: Text(localization.translate('placeOrder')),
             ),

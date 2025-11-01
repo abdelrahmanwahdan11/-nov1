@@ -7,14 +7,16 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   const AppTheme._();
 
-  static ThemeData light(Color seed) => _buildTheme(
+  static ThemeData light(Color seed, double alpha) => _buildTheme(
         seed,
+        alpha: alpha,
         brightness: Brightness.light,
         gradient: const [Color(0xFFFFE1EA), Color(0xFFFFC7D1)],
       );
 
-  static ThemeData dark(Color seed) => _buildTheme(
+  static ThemeData dark(Color seed, double alpha) => _buildTheme(
         seed,
+        alpha: alpha,
         brightness: Brightness.dark,
         gradient: const [Color(0xFF1C1A22), Color(0xFF261F2A)],
       );
@@ -23,12 +25,15 @@ class AppTheme {
     Color seed, {
     required Brightness brightness,
     required List<Color> gradient,
+    required double alpha,
   }) {
     final base = ThemeData(brightness: brightness, useMaterial3: true);
     final colorScheme = ColorScheme.fromSeed(
       seedColor: seed,
       brightness: brightness,
     );
+
+    final normalizedAlpha = alpha.clamp(0.5, 1.0);
 
     final poppins = GoogleFonts.poppinsTextTheme(base.textTheme);
     final fallbackFont = GoogleFonts.cairo().fontFamily ?? 'Cairo';
@@ -37,18 +42,26 @@ class AppTheme {
     );
     final primaryTextTheme = GoogleFonts.cairoTextTheme(base.primaryTextTheme);
 
+    final gradientColors = gradient
+        .map((color) => Color.lerp(color, seed, 0.12)?.withOpacity(normalizedAlpha) ??
+            color.withOpacity(normalizedAlpha))
+        .toList();
+
+    final darkGradientColors = const [Color(0xFF1C1A22), Color(0xFF261F2A)]
+        .map((color) => Color.lerp(color, seed, 0.08)?.withOpacity(normalizedAlpha) ??
+            color.withOpacity(normalizedAlpha))
+        .toList();
+
     final tokens = JewelThemeTokens(
       lightGradient: LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: gradient,
+        colors: gradientColors,
       ),
       darkGradient: LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: brightness == Brightness.dark
-            ? gradient
-            : const [Color(0xFF1C1A22), Color(0xFF261F2A)],
+        colors: brightness == Brightness.dark ? gradientColors : darkGradientColors,
       ),
       cardRadius: 26,
       pillRadius: 18,
@@ -68,6 +81,10 @@ class AppTheme {
       borderRadius: BorderRadius.circular(tokens.cardRadius),
     );
 
+    final surfaceOpacity = brightness == Brightness.dark
+        ? (0.6 + (normalizedAlpha - 0.5) * 0.3)
+        : (0.55 + (normalizedAlpha - 0.5) * 0.9);
+
     return base.copyWith(
       colorScheme: colorScheme,
       textTheme: textTheme,
@@ -84,14 +101,14 @@ class AppTheme {
         shape: cardShape,
         clipBehavior: Clip.antiAlias,
         margin: EdgeInsets.zero,
-        color: colorScheme.surface.withOpacity(brightness == Brightness.dark ? 0.85 : 0.82),
+        color: colorScheme.surface.withOpacity(surfaceOpacity.clamp(0.55, 1.0)),
         surfaceTintColor: Colors.transparent,
       ),
       chipTheme: base.chipTheme.copyWith(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(tokens.chipRadius)),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        selectedColor: colorScheme.primary.withOpacity(0.16),
-        backgroundColor: colorScheme.surfaceVariant.withOpacity(0.4),
+        selectedColor: colorScheme.primary.withOpacity(0.16 + (normalizedAlpha - 0.5) * 0.1),
+        backgroundColor: colorScheme.surfaceVariant.withOpacity(0.35 + (normalizedAlpha - 0.5) * 0.2),
         labelStyle: textTheme.labelLarge,
       ),
       filledButtonTheme: FilledButtonThemeData(

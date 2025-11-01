@@ -29,6 +29,7 @@ import 'pages/saved_searches_page.dart';
 import 'pages/my_items_page.dart';
 import 'pages/notifications_page.dart';
 import 'pages/profile_page.dart';
+import 'pages/order_success_page.dart';
 import 'pages/root_shell.dart';
 import 'pages/search_page.dart';
 import 'pages/settings_page.dart';
@@ -134,7 +135,8 @@ class _JewelXAppState extends State<JewelXApp> {
       child: AnimatedBuilder(
         animation: _appController,
         builder: (context, _) {
-          final primary = _appController.primaryColor;
+          final seed = _appController.seedColor;
+          final alpha = _appController.alpha;
           final locale = _appController.locale;
           return MaterialApp(
             debugShowCheckedModeBanner: false,
@@ -147,8 +149,8 @@ class _JewelXAppState extends State<JewelXApp> {
               GlobalCupertinoLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
             ],
-            theme: AppTheme.light(primary),
-            darkTheme: AppTheme.dark(primary),
+            theme: AppTheme.light(seed, alpha),
+            darkTheme: AppTheme.dark(seed, alpha),
             themeMode: _appController.isDark ? ThemeMode.dark : ThemeMode.light,
             initialRoute: SplashPage.routeName,
             routes: {
@@ -173,6 +175,7 @@ class _JewelXAppState extends State<JewelXApp> {
               SavedSearchesPage.routeName: (context) => const SavedSearchesPage(),
               '/my-items': (context) => const MyItemsPage(),
               '/profile': (context) => const ProfilePage(),
+              OrderSuccessPage.routeName: (context) => const OrderSuccessPage(),
               '/state/empty': (context) => const JewelStateScreen(variant: JewelStateVariant.empty),
               '/state/error': (context) => const JewelStateScreen(variant: JewelStateVariant.error),
               '/state/offline': (context) => const JewelStateScreen(variant: JewelStateVariant.offline),
@@ -195,8 +198,11 @@ class _JewelXAppState extends State<JewelXApp> {
                 duration: const Duration(milliseconds: 250),
                 decoration: BoxDecoration(
                   gradient: gradient ??
-                      const LinearGradient(
-                        colors: [Color(0xFFFFE1EA), Color(0xFFFFC7D1)],
+                      LinearGradient(
+                        colors: const [Color(0xFFFFE1EA), Color(0xFFFFC7D1)]
+                            .map((c) => Color.lerp(c, seed, 0.12)?.withOpacity(alpha) ??
+                                c.withOpacity(alpha))
+                            .toList(),
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),

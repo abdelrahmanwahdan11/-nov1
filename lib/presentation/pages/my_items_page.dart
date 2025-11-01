@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../controllers/controllers_scope.dart';
 import '../controllers/my_items_controller.dart';
+import '../controllers/scroll_memory.dart';
 import 'package:jewelx/core/i18n/app_localizations.dart';
 import 'package:jewelx/domain/models/jewelry_item.dart';
 import 'package:jewelx/core/theme/app_theme.dart';
@@ -16,6 +17,8 @@ class MyItemsPage extends StatefulWidget {
 
 class _MyItemsPageState extends State<MyItemsPage> with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  ScrollController? _scrollController;
+  ScrollMemory? _scrollMemory;
 
   @override
   void initState() {
@@ -30,8 +33,26 @@ class _MyItemsPageState extends State<MyItemsPage> with SingleTickerProviderStat
 
   @override
   void dispose() {
+    _scrollController?.dispose();
     _tabController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final memory = ControllersScope.of(context).scrollMemory;
+    if (_scrollMemory == memory && _scrollController != null) {
+      return;
+    }
+    _scrollMemory = memory;
+    _scrollController?.dispose();
+    final offset = memory.getOffset('my-items');
+    final controller = ScrollController(initialScrollOffset: offset);
+    controller.addListener(() {
+      memory.save('my-items', controller.offset);
+    });
+    _scrollController = controller;
   }
 
   @override
@@ -71,6 +92,7 @@ class _MyItemsPageState extends State<MyItemsPage> with SingleTickerProviderStat
           }
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+            controller: _scrollController,
             itemCount: filtered.length,
             itemBuilder: (context, index) {
               final item = filtered[index];

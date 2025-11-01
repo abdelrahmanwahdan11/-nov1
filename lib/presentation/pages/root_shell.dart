@@ -33,6 +33,7 @@ class _RootShellState extends State<RootShell> {
     final controllers = ControllersScope.of(context);
     final cart = controllers.cartController;
     final notifications = controllers.notificationController;
+    final compare = controllers.compareController;
     final t = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final tokens = theme.extension<JewelThemeTokens>();
@@ -66,6 +67,17 @@ class _RootShellState extends State<RootShell> {
                 icon: Icons.shopping_bag_outlined,
                 count: cart.totalItems,
                 onTap: () => Navigator.of(context).pushNamed('/cart'),
+              );
+            },
+          ),
+          const SizedBox(width: 12),
+          AnimatedBuilder(
+            animation: compare,
+            builder: (context, _) {
+              return _RoundedAction(
+                icon: Icons.compare_arrows_rounded,
+                count: compare.selectedIds.length,
+                onTap: () => Navigator.of(context).pushNamed('/compare/jewelry'),
               );
             },
           ),
