@@ -57,7 +57,7 @@ class _JewelXAppState extends State<JewelXApp> {
     await Future.wait([
       _themeController.initialize(),
       _authController.initialize(),
-      _catalogController.loadInitial(),
+      _catalogController.initialize(),
     ]);
     setState(() => _initialized = true);
   }

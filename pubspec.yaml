@@ -1,7 +1,7 @@
 name: jewelx
-description: JewelX marketplace app
+description: "سوق مجوهرات جديدة ومستعملة مع عارض ثلاثي الأبعاد، انتقالات متقدمة، وبحث/فلاتر/مقارنة ثرية"
 publish_to: 'none'
-version: 1.0.0+1
+version: 3.0.0+1
 
 environment:
   sdk: '>=3.16.0 <4.0.0'
@@ -25,5 +25,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/placeholder/
