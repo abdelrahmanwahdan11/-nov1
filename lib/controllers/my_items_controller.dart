@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../data/mock_data.dart';
+import '../models/app_notification.dart';
 import '../models/jewelry_item.dart';
 import '../models/offer.dart';
 import 'notification_controller.dart';
@@ -28,6 +29,11 @@ class MyItemsController extends ChangeNotifier {
     notifyListeners();
     await Future<void>.delayed(const Duration(milliseconds: 400));
     _myItems.add(item);
+    _notificationController?.addSystemNotification(
+      type: NotificationType.newArrival,
+      title: item.name,
+      message: 'Added to your private collection',
+    );
     _isSubmitting = false;
     notifyListeners();
   }
@@ -47,6 +53,19 @@ class MyItemsController extends ChangeNotifier {
       forSale: forSale,
       awaitOffers: awaitOffers,
     );
+    if (forSale) {
+      _notificationController?.addSystemNotification(
+        type: NotificationType.priceDrop,
+        title: item.name,
+        message: 'Now available with a listed price',
+      );
+    } else if (awaitOffers) {
+      _notificationController?.addSystemNotification(
+        type: NotificationType.wishlist,
+        title: item.name,
+        message: 'Accepting private offers',
+      );
+    }
     notifyListeners();
   }
 

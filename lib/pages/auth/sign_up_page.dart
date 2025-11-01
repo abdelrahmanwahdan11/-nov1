@@ -17,14 +17,36 @@ class _SignUpPageState extends State<SignUpPage> {
   final _displayNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
   bool _loading = false;
+  double _passwordStrength = 0;
 
   @override
   void dispose() {
     _displayNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  void _onPasswordChanged(String value) {
+    setState(() {
+      _passwordStrength = _calculateStrength(value);
+    });
+  }
+
+  double _calculateStrength(String password) {
+    if (password.isEmpty) return 0;
+    double strength = 0;
+    final lengthScore = (password.length / 12).clamp(0, 1);
+    strength += lengthScore * 0.4;
+    if (RegExp('[A-Z]').hasMatch(password)) strength += 0.2;
+    if (RegExp('[0-9]').hasMatch(password)) strength += 0.2;
+    if (RegExp('[!@#%^&*()]').hasMatch(password)) strength += 0.2;
+    return strength.clamp(0, 1);
   }
 
   @override
@@ -57,10 +79,68 @@ class _SignUpPageState extends State<SignUpPage> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
-                obscureText: true,
-                decoration: InputDecoration(labelText: t.translate('password')),
-                validator: (value) =>
-                    value != null && value.length >= 6 ? null : 'Min 6 chars',
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: t.translate('password'),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                ),
+                onChanged: _onPasswordChanged,
+                validator: (value) {
+                  if (value == null || value.length < 6) {
+                    return t.translate('passwordTooShort');
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: LinearProgressIndicator(
+                  minHeight: 8,
+                  value: _passwordStrength == 0 ? null : _passwordStrength,
+                  backgroundColor: Colors.black12,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    _passwordStrength > 0.7
+                        ? Colors.green
+                        : _passwordStrength > 0.4
+                            ? Colors.orange
+                            : Colors.redAccent,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _confirmPasswordController,
+                obscureText: _obscureConfirm,
+                decoration: InputDecoration(
+                  labelText: t.translate('confirmPassword'),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirm
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () =>
+                        setState(() => _obscureConfirm = !_obscureConfirm),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return t.translate('fieldRequired');
+                  }
+                  if (value != _passwordController.text) {
+                    return t.translate('passwordsDoNotMatch');
+                  }
+                  return null;
+                },
               ),
               const Spacer(),
               FilledButton(

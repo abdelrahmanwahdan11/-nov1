@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:iconly/iconly.dart';
 
+import '../controllers/controllers_scope.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import 'catalog_page.dart';
@@ -29,6 +30,9 @@ class _RootShellState extends State<RootShell> {
 
   @override
   Widget build(BuildContext context) {
+    final controllers = ControllersScope.of(context);
+    final cart = controllers.cartController;
+    final notifications = controllers.notificationController;
     final t = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final tokens = theme.extension<JewelThemeTokens>();
@@ -50,14 +54,27 @@ class _RootShellState extends State<RootShell> {
         ),
         centerTitle: false,
         actions: [
-          _RoundedAction(
-            icon: Icons.shopping_bag_outlined,
-            onTap: () => Navigator.of(context).pushNamed('/cart'),
+          AnimatedBuilder(
+            animation: cart,
+            builder: (context, _) {
+              return _RoundedAction(
+                icon: Icons.shopping_bag_outlined,
+                count: cart.totalItems,
+                onTap: () => Navigator.of(context).pushNamed('/cart'),
+              );
+            },
           ),
           const SizedBox(width: 12),
-          _RoundedAction(
-            icon: IconlyBold.notification,
-            onTap: () => Navigator.of(context).pushNamed('/notifications'),
+          AnimatedBuilder(
+            animation: notifications,
+            builder: (context, _) {
+              final unread = notifications.notifications.where((n) => !n.read).length;
+              return _RoundedAction(
+                icon: IconlyBold.notification,
+                showDot: unread > 0,
+                onTap: () => Navigator.of(context).pushNamed('/notifications'),
+              );
+            },
           ),
           const SizedBox(width: 12),
           _RoundedAction(
@@ -105,28 +122,66 @@ class _RootShellState extends State<RootShell> {
 }
 
 class _RoundedAction extends StatelessWidget {
-  const _RoundedAction({required this.icon, required this.onTap});
+  const _RoundedAction({
+    required this.icon,
+    required this.onTap,
+    this.count,
+    this.showDot = false,
+  });
 
   final IconData icon;
   final VoidCallback onTap;
+  final int? count;
+  final bool showDot;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tokens = theme.extension<JewelThemeTokens>();
-    return Material(
-      color: theme.colorScheme.surface.withOpacity(0.7),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(tokens?.pillRadius ?? 18),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(tokens?.pillRadius ?? 18),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Icon(icon, size: 22, color: theme.colorScheme.onSurface),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Material(
+          color: theme.colorScheme.surface.withOpacity(0.7),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(tokens?.pillRadius ?? 18),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(tokens?.pillRadius ?? 18),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Icon(icon, size: 22, color: theme.colorScheme.onSurface),
+            ),
+          ),
         ),
-      ),
+        if ((count ?? 0) > 0)
+          Positioned(
+            right: -2,
+            top: -4,
+            child: CircleAvatar(
+              radius: 10,
+              backgroundColor: theme.colorScheme.primary,
+              child: Text(
+                count! > 9 ? '9+' : '$count',
+                style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          )
+        else if (showDot)
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

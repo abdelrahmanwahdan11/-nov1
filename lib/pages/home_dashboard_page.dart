@@ -1,145 +1,262 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../controllers/catalog_controller.dart';
 import '../controllers/controllers_scope.dart';
+import '../data/mock_data.dart';
 import '../l10n/app_localizations.dart';
 import '../models/jewelry_item.dart';
 import '../theme/app_theme.dart';
 
-class HomeDashboardPage extends StatelessWidget {
+class HomeDashboardPage extends StatefulWidget {
   const HomeDashboardPage({super.key});
+
+  @override
+  State<HomeDashboardPage> createState() => _HomeDashboardPageState();
+}
+
+class _HomeDashboardPageState extends State<HomeDashboardPage> {
+  late final PageController _pageController;
+  Timer? _autoPlay;
+  int _carouselIndex = 0;
+
+  List<String> get _carouselImages =>
+      MockData.jewelry.map((item) => item.images.first).toSet().take(6).toList();
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.88);
+    _startAutoPlay();
+  }
+
+  @override
+  void dispose() {
+    _autoPlay?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _startAutoPlay() {
+    _autoPlay?.cancel();
+    if (_carouselImages.length < 2) return;
+    _autoPlay = Timer.periodic(4.seconds, (_) {
+      if (!mounted) return;
+      _carouselIndex = (_carouselIndex + 1) % _carouselImages.length;
+      _pageController.animateToPage(
+        _carouselIndex,
+        duration: 550.ms,
+        curve: Curves.easeInOut,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final controllers = ControllersScope.of(context);
     final catalog = controllers.catalogController;
+    final localization = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final tokens = theme.extension<JewelThemeTokens>();
-    final localization = AppLocalizations.of(context);
 
     return SafeArea(
       bottom: false,
-      child: RefreshIndicator(
-        color: theme.colorScheme.primary,
-        onRefresh: catalog.refresh,
-        child: AnimatedBuilder(
-          animation: catalog,
-          builder: (context, _) {
-            final items = catalog.items;
-            return ListView(
-              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
-              children: [
-                _HeroShowcase(tokens: tokens)
-                    .animate()
-                    .fadeIn(duration: 400.ms)
-                    .slide(begin: const Offset(0, 0.15)),
-                const SizedBox(height: 28),
-                _BrandRail(
-                  tokens: tokens,
-                  onBrandSelected: (brand) => catalog.search(brand),
-                ).animate().fadeIn(duration: 350.ms).moveY(begin: 12, end: 0),
-                const SizedBox(height: 32),
-                _NewArrivalsCarousel(
-                  items: items,
-                  localization: localization,
-                  tokens: tokens,
-                ).animate().fadeIn(duration: 350.ms).moveY(begin: 20, end: 0),
-                const SizedBox(height: 28),
-                _AiInsightButton(localization: localization)
-                    .animate()
-                    .fadeIn(duration: 300.ms)
-                    .moveY(begin: 20, end: 0),
-              ],
-            );
-          },
-        ),
+      child: AnimatedBuilder(
+        animation: catalog,
+        builder: (context, _) {
+          final items = catalog.items;
+          final isLoading = catalog.isLoading && items.isEmpty;
+          return RefreshIndicator(
+            color: theme.colorScheme.primary,
+            onRefresh: catalog.refresh,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification.metrics.extentAfter < 320 &&
+                    !catalog.isLoading &&
+                    catalog.hasMore) {
+                  catalog.loadMore();
+                }
+                return false;
+              },
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                      child: _HeroCarousel(
+                        controller: _pageController,
+                        images: _carouselImages,
+                        localization: localization,
+                        tokens: tokens,
+                        onPageChanged: (value) => setState(() => _carouselIndex = value),
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      child: _BrandRail(
+                        tokens: tokens,
+                        onBrandSelected: (brand) => catalog.search(brand),
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                      child: _AiInsightButton(localization: localization),
+                    ),
+                  ),
+                  if (isLoading)
+                    _SkeletonGrid(tokens: tokens)
+                  else if (items.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Text(localization.translate('emptyCatalog')),
+                      ),
+                    )
+                  else
+                    _HomeGrid(
+                      items: items,
+                      localization: localization,
+                      tokens: tokens,
+                      onQuickLook: _openQuickLook,
+                    ),
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: 120 + MediaQuery.of(context).padding.bottom),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
+    );
+  }
+
+  void _openQuickLook(JewelryItem item) {
+    showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'quick-look',
+      transitionDuration: 350.ms,
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Center(
+          child: Hero(
+            tag: 'home-${item.id}',
+            child: _QuickLookCard(
+              item: item,
+              onClose: () => Navigator.of(context).pop(),
+              onViewDetails: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushNamed('/details', arguments: item);
+              },
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondary, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          child: child,
+        );
+      },
     );
   }
 }
 
-class _HeroShowcase extends StatelessWidget {
-  const _HeroShowcase({required this.tokens});
+class _HeroCarousel extends StatelessWidget {
+  const _HeroCarousel({
+    required this.controller,
+    required this.images,
+    required this.localization,
+    required this.tokens,
+    required this.onPageChanged,
+  });
 
+  final PageController controller;
+  final List<String> images;
+  final AppLocalizations localization;
   final JewelThemeTokens? tokens;
+  final ValueChanged<int> onPageChanged;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(tokens?.cardRadius ?? 26),
-      child: Stack(
-        children: [
-          Container(
-            height: 240,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.colorScheme.primary.withOpacity(0.85),
-                  theme.colorScheme.primaryContainer.withOpacity(0.6),
+    return SizedBox(
+      height: 220,
+      child: PageView.builder(
+        controller: controller,
+        onPageChanged: onPageChanged,
+        itemCount: images.length,
+        itemBuilder: (context, index) {
+          final image = images[index % images.length];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(tokens?.cardRadius ?? 26),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(image, fit: BoxFit.cover),
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.15),
+                            Colors.black.withOpacity(0.35),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 24,
+                    right: 24,
+                    bottom: 24,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              localization.translate('newArrivals'),
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              localization.translate('compareNow'),
+                              style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white70),
+                            ),
+                          ],
+                        ),
+                        FilledButton.tonal(
+                          onPressed: () => Navigator.of(context).pushNamed('/catalog/jewelry'),
+                          child: Text(localization.translate('seeAll')),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-          Positioned.fill(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 24),
-                child: Icon(
-                  Icons.diamond_outlined,
-                  size: 120,
-                  color: Colors.white.withOpacity(0.25),
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: tokens?.glassBlurSigma ?? 12, sigmaY: tokens?.glassBlurSigma ?? 12),
-              child: const SizedBox(),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Royal Gems',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Pink gradient • Exclusive release',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: Colors.white70,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const Spacer(),
-                FilledButton.icon(
-                  onPressed: () => Navigator.of(context).pushNamed('/catalog/jewelry'),
-                  style: FilledButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.92)),
-                  icon: Icon(Icons.arrow_forward_rounded, color: theme.colorScheme.primary),
-                  label: Text(
-                    AppLocalizations.of(context).translate('seeAll'),
-                    style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -166,237 +283,42 @@ class _BrandRail extends StatelessWidget {
         Text(
           localization.translate('brands'),
           style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-        ),
+        ).animate().fadeIn(duration: 300.ms).moveY(begin: 12, end: 0),
         const SizedBox(height: 14),
         SizedBox(
-          height: 86,
+          height: 92,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: brands.length,
             separatorBuilder: (_, __) => const SizedBox(width: 16),
             itemBuilder: (context, index) {
               final url = brands[index];
+              final label = 'Brand ${index + 1}';
               return GestureDetector(
-                onTap: () => onBrandSelected('Brand ${index + 1}'),
+                onTap: () => onBrandSelected(label),
                 child: Column(
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: tokens?.brandAvatarBg.withOpacity(0.85) ?? Colors.white,
+                        color: tokens?.brandAvatarBg.withOpacity(0.88) ?? Colors.white,
                         borderRadius: BorderRadius.circular(40),
                         boxShadow: tokens?.softShadow,
                       ),
                       padding: const EdgeInsets.all(10),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(32),
-                        child: Image.network(
-                          url,
-                          width: 56,
-                          height: 56,
-                          fit: BoxFit.cover,
-                        ),
+                        child: Image.network(url, width: 58, height: 58, fit: BoxFit.cover),
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Brand ${index + 1}',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: tokens?.brandAvatarFg ?? theme.colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    const SizedBox(height: 8),
+                    Text(label, style: theme.textTheme.labelMedium),
                   ],
-                ),
+                ).animate().fadeIn(delay: (index * 70).ms).moveY(begin: 10, end: 0),
               );
             },
           ),
         ),
       ],
-    );
-  }
-}
-
-class _NewArrivalsCarousel extends StatelessWidget {
-  const _NewArrivalsCarousel({
-    required this.items,
-    required this.localization,
-    required this.tokens,
-  });
-
-  final List<JewelryItem> items;
-  final AppLocalizations localization;
-  final JewelThemeTokens? tokens;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              localization.translate('newArrivals'),
-              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pushNamed('/catalog/jewelry'),
-              child: Text(localization.translate('seeAll')),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 260,
-          child: items.isEmpty
-              ? _EmptyCarouselPlaceholder(tokens: tokens)
-              : ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: math.min(items.length, 8),
-                  separatorBuilder: (_, __) => const SizedBox(width: 18),
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return _NewArrivalCard(item: item, tokens: tokens, localization: localization);
-                  },
-                ),
-        ),
-      ],
-    );
-  }
-}
-
-class _NewArrivalCard extends StatelessWidget {
-  const _NewArrivalCard({
-    required this.item,
-    required this.tokens,
-    required this.localization,
-  });
-
-  final JewelryItem item;
-  final JewelThemeTokens? tokens;
-  final AppLocalizations localization;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: () => Navigator.of(context).pushNamed('/details', arguments: item),
-      child: Container(
-        width: 200,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(tokens?.cardRadius ?? 26),
-          boxShadow: tokens?.softShadow,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(tokens?.cardRadius ?? 26),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: Image.network(item.images.first, fit: BoxFit.cover),
-              ),
-              Positioned(
-                top: 16,
-                right: 16,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black38,
-                    shape: BoxShape.circle,
-                  ),
-                  padding: const EdgeInsets.all(8),
-                  child: const Icon(Icons.favorite_border, color: Colors.white, size: 18),
-                ),
-              ),
-              Positioned(
-                bottom: 20,
-                left: 16,
-                right: 16,
-                child: _PricePill(
-                  tokens: tokens,
-                  text: item.price != null
-                      ? '\$${item.price!.toStringAsFixed(0)}'
-                      : localization.translate('noPriceShown'),
-                ),
-              ),
-              Positioned(
-                bottom: 84,
-                left: 16,
-                right: 16,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      item.brand,
-                      style: theme.textTheme.labelLarge?.copyWith(color: Colors.white70),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyCarouselPlaceholder extends StatelessWidget {
-  const _EmptyCarouselPlaceholder({required this.tokens});
-
-  final JewelThemeTokens? tokens;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(tokens?.cardRadius ?? 26),
-        color: theme.colorScheme.surface.withOpacity(0.4),
-      ),
-      child: Center(
-        child: Text(
-          AppLocalizations.of(context).translate('emptyCatalog'),
-          style: theme.textTheme.bodyLarge,
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-}
-
-class _PricePill extends StatelessWidget {
-  const _PricePill({required this.tokens, required this.text});
-
-  final JewelThemeTokens? tokens;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: tokens?.pricePillBackground ?? Colors.white,
-        borderRadius: BorderRadius.circular(tokens?.pillRadius ?? 18),
-      ),
-      child: Text(
-        text,
-        style: theme.textTheme.labelLarge?.copyWith(
-          color: tokens?.pricePillForeground ?? theme.colorScheme.onSurface,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
     );
   }
 }
@@ -409,29 +331,336 @@ class _AiInsightButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return FilledButton.icon(
+    return OutlinedButton.icon(
       onPressed: () {
         showDialog<void>(
           context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: Text(localization.translate('aiInfo')),
-              content: Text(localization.translate('aiInsightDescription')),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(localization.translate('ok')),
-                ),
-              ],
-            );
-          },
+          builder: (context) => AlertDialog(
+            title: Text(localization.translate('aiInfo')),
+            content: Text(localization.translate('aiInsightDescription')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(localization.translate('ok')),
+              ),
+            ],
+          ),
         );
       },
       icon: const Icon(Icons.auto_awesome),
       label: Text(localization.translate('aiInfo')),
-      style: FilledButton.styleFrom(
-        backgroundColor: theme.colorScheme.onSurface,
-        foregroundColor: theme.colorScheme.surface,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: theme.colorScheme.primary,
+        side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.4)),
+      ),
+    );
+  }
+}
+
+class _SkeletonGrid extends StatelessWidget {
+  const _SkeletonGrid({required this.tokens});
+
+  final JewelThemeTokens? tokens;
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 0.7,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(tokens?.cardRadius ?? 26),
+              ),
+            ).animate().shimmer(duration: 1200.ms, delay: (index * 80).ms);
+          },
+          childCount: 6,
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeGrid extends StatelessWidget {
+  const _HomeGrid({
+    required this.items,
+    required this.localization,
+    required this.tokens,
+    required this.onQuickLook,
+  });
+
+  final List<JewelryItem> items;
+  final AppLocalizations localization;
+  final JewelThemeTokens? tokens;
+  final ValueChanged<JewelryItem> onQuickLook;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 0.72,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final item = items[index];
+            return _HomeItemCard(
+              item: item,
+              localization: localization,
+              tokens: tokens,
+              onQuickLook: onQuickLook,
+            ).animate().fadeIn(duration: 300.ms, delay: (index * 60).ms).moveY(begin: 12, end: 0);
+          },
+          childCount: items.length,
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeItemCard extends StatelessWidget {
+  const _HomeItemCard({
+    required this.item,
+    required this.localization,
+    required this.tokens,
+    required this.onQuickLook,
+  });
+
+  final JewelryItem item;
+  final AppLocalizations localization;
+  final JewelThemeTokens? tokens;
+  final ValueChanged<JewelryItem> onQuickLook;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final price = item.price != null
+        ? '${localization.translate('currencySymbol')}${item.price!.toStringAsFixed(0)}'
+        : localization.translate('priceOnRequest');
+    return GestureDetector(
+      onTap: () => onQuickLook(item),
+      child: Hero(
+        tag: 'home-${item.id}',
+        child: Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface.withOpacity(0.88),
+            borderRadius: BorderRadius.circular(tokens?.cardRadius ?? 26),
+            boxShadow: tokens?.softShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular((tokens?.cardRadius ?? 26) - 6),
+                  child: Image.network(
+                    item.images.first,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Text('${item.brand} • ${item.material.name}', style: theme.textTheme.bodySmall),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceVariant.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(tokens?.pillRadius ?? 18),
+                      ),
+                      child: Text(price, style: theme.textTheme.labelLarge),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickLookCard extends StatefulWidget {
+  const _QuickLookCard({
+    required this.item,
+    required this.onClose,
+    required this.onViewDetails,
+  });
+
+  final JewelryItem item;
+  final VoidCallback onClose;
+  final VoidCallback onViewDetails;
+
+  @override
+  State<_QuickLookCard> createState() => _QuickLookCardState();
+}
+
+class _QuickLookCardState extends State<_QuickLookCard> {
+  bool _showBack = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = theme.extension<JewelThemeTokens>();
+    return Material(
+      color: Colors.transparent,
+      child: GestureDetector(
+        onTap: () => setState(() => _showBack = !_showBack),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.82,
+          height: 440,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface.withOpacity(0.95),
+            borderRadius: BorderRadius.circular(tokens?.cardRadius ?? 26),
+            boxShadow: tokens?.softShadow,
+          ),
+          child: Stack(
+            children: [
+              AnimatedSwitcher(
+                duration: 450.ms,
+                transitionBuilder: (child, animation) {
+                  final rotate = Tween<double>(begin: math.pi, end: 0).animate(animation);
+                  return AnimatedBuilder(
+                    animation: rotate,
+                    child: child,
+                    builder: (context, child) {
+                      final value = rotate.value;
+                      return Transform(
+                        transform: Matrix4.identity()
+                          ..setEntry(3, 2, 0.001)
+                          ..rotateY(value),
+                        alignment: Alignment.center,
+                        child: child,
+                      );
+                    },
+                  );
+                },
+                child: _showBack
+                    ? _QuickLookBack(item: widget.item)
+                    : _QuickLookFront(item: widget.item),
+              ),
+              Positioned(
+                right: 12,
+                top: 12,
+                child: IconButton(
+                  onPressed: widget.onClose,
+                  icon: const Icon(Icons.close),
+                ),
+              ),
+              Positioned(
+                left: 20,
+                right: 20,
+                bottom: 20,
+                child: FilledButton(
+                  onPressed: widget.onViewDetails,
+                  child: Text(AppLocalizations.of(context).translate('details')),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickLookFront extends StatelessWidget {
+  const _QuickLookFront({required this.item});
+
+  final JewelryItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      key: const ValueKey('front'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+            child: Image.network(item.images.first, fit: BoxFit.cover),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 60),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(item.name, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 6),
+              Text(item.brand, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.primary)),
+              const SizedBox(height: 8),
+              Text(item.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickLookBack extends StatelessWidget {
+  const _QuickLookBack({required this.item});
+
+  final JewelryItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final localization = AppLocalizations.of(context);
+    final specs = {
+      localization.translate('material'): item.material.name,
+      localization.translate('carat'): item.carat.toStringAsFixed(2),
+      localization.translate('weight'): '${item.weightGrams} g',
+      localization.translate('condition'): item.condition.name,
+    };
+    return Padding(
+      key: const ValueKey('back'),
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 80),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(localization.translate('details'), style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          for (final entry in specs.entries)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(entry.key, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+                  Text(entry.value, style: theme.textTheme.bodyMedium),
+                ],
+              ),
+            ),
+          const Spacer(),
+          Text(localization.translate('tips'), style: theme.textTheme.titleSmall),
+          const SizedBox(height: 6),
+          Text(item.tips, maxLines: 3, overflow: TextOverflow.ellipsis),
+        ],
       ),
     );
   }

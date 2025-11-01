@@ -22,6 +22,9 @@ class AppLocalizations {
       'guest': 'الدخول كضيف',
       'email': 'البريد الإلكتروني',
       'password': 'كلمة المرور',
+      'confirmPassword': 'تأكيد كلمة المرور',
+      'passwordTooShort': 'كلمة المرور قصيرة جدًا',
+      'passwordsDoNotMatch': 'كلمتا المرور غير متطابقتين',
       'showPassword': 'إظهار',
       'hidePassword': 'إخفاء',
       'forgotPassword': 'نسيت كلمة المرور؟',
@@ -32,11 +35,17 @@ class AppLocalizations {
       'cart': 'السلة',
       'profile': 'حسابي',
       'settings': 'الإعدادات',
+      'accountSettings': 'إعدادات الحساب',
+      'appPreferences': 'تخصيص التطبيق',
+      'marketplaceTools': 'أدوات السوق',
       'language': 'اللغة',
       'theme': 'المظهر',
       'darkMode': 'الوضع الليلي',
       'primaryColor': 'اللون الرئيسي',
+      'tintPickerHelp': 'حرّك المنزلق لاختيار درجة قريبة من اللون الرئيسي.',
+      'signOut': 'تسجيل الخروج',
       'brands': 'الماركات',
+      'brand': 'الماركة',
       'newArrivals': 'وصل حديثاً',
       'offers': 'عروض',
       'aiInfo': 'معلومة بالذكاء الاصطناعي',
@@ -60,12 +69,34 @@ class AppLocalizations {
       'compareNow': 'قارن الآن',
       'pullToRefresh': 'اسحب للتحديث',
       'myItems': 'مقتنياتي',
+      'tabAllItems': 'الكل',
+      'itemName': 'اسم العنصر',
       'addItem': 'إضافة عنصر',
       'sellNow': 'عرض للبيع',
       'awaitOffers': 'انتظار عروض',
       'tips': 'نصائح',
       'repairs': 'إصلاحات مقترحة',
       'notifications': 'إشعارات',
+      'notificationPreferences': 'خيارات الإشعارات',
+      'allNotifications': 'جميع الإشعارات',
+      'noNotifications': 'لا توجد إشعارات بعد',
+      'clearAll': 'مسح الكل',
+      'notifications.offer': 'عروض جديدة',
+      'notifications.offer.description':
+          'إشعار عند وصول عرض على عناصر البيع الخاصة بك.',
+      'notifications.wishlist': 'قائمة الرغبات',
+      'notifications.wishlist.description':
+          'إشعار عند انتظار العروض على مقتنياتك.',
+      'notifications.priceDrop': 'تغييرات الأسعار',
+      'notifications.priceDrop.description':
+          'إشعار عند نشر عنصر بسعر جديد.',
+      'notifications.newArrival': 'وصول جديد',
+      'notifications.newArrival.description':
+          'تنبيه بعناصر جديدة في السوق المختار.',
+      'justNow': 'الآن',
+      'minutesAgo': 'قبل {value} دقيقة',
+      'hoursAgo': 'قبل {value} ساعة',
+      'daysAgo': 'قبل {value} يوم',
       'receivedOffer': 'تم استلام عرض',
       'noPriceShown': 'بدون سعر معلن',
       'filters': 'فلاتر',
@@ -89,6 +120,7 @@ class AppLocalizations {
       'seeAll': 'عرض الكل',
       'sizeGuide': 'دليل المقاسات',
       'searchHint': 'ابحث بالاسم، الحجر، العيار، الوصف…',
+      'noSearchResults': 'لا توجد نتائج مطابقة حالياً',
       'carCatalog': 'كتالوج السيارات',
       'carCompare': 'مقارنة السيارات',
       'emptyCatalog': 'لا توجد عناصر مطابقة حالياً',
@@ -100,6 +132,7 @@ class AppLocalizations {
       'aiInsightDescription':
           'سيتم لاحقًا استخدام الذكاء الاصطناعي لشرح مواصفات الحجر والمعدن.',
       'ok': 'حسنًا',
+      'threeDUnavailable': 'تعذر تحميل العارض ثلاثي الأبعاد الآن',
       'showTutorialAgain': 'إعادة عرض الشرح',
       'demoDataReset': 'تمت إعادة ضبط بيانات العرض.',
       'tutorialReset': 'سيظهر الشرح التفاعلي عند التشغيل التالي.',
@@ -144,6 +177,9 @@ class AppLocalizations {
       'guest': 'Continue as Guest',
       'email': 'Email',
       'password': 'Password',
+      'confirmPassword': 'Confirm password',
+      'passwordTooShort': 'Password is too short',
+      'passwordsDoNotMatch': 'Passwords do not match',
       'showPassword': 'Show',
       'hidePassword': 'Hide',
       'forgotPassword': 'Forgot Password?',
@@ -154,11 +190,17 @@ class AppLocalizations {
       'cart': 'Cart',
       'profile': 'Profile',
       'settings': 'Settings',
+      'accountSettings': 'Account settings',
+      'appPreferences': 'App preferences',
+      'marketplaceTools': 'Marketplace tools',
       'language': 'Language',
       'theme': 'Theme',
       'darkMode': 'Dark Mode',
       'primaryColor': 'Primary Color',
+      'tintPickerHelp': 'Slide to adjust a tint close to the brand color.',
+      'signOut': 'Sign out',
       'brands': 'Brands',
+      'brand': 'Brand',
       'newArrivals': 'New Arrivals',
       'offers': 'Offers',
       'aiInfo': 'AI Insight',
@@ -182,12 +224,34 @@ class AppLocalizations {
       'compareNow': 'Compare Now',
       'pullToRefresh': 'Pull to refresh',
       'myItems': 'My Items',
+      'tabAllItems': 'All',
+      'itemName': 'Item name',
       'addItem': 'Add Item',
       'sellNow': 'List for Sale',
       'awaitOffers': 'Await Offers',
       'tips': 'Tips',
       'repairs': 'Suggested Repairs',
       'notifications': 'Notifications',
+      'notificationPreferences': 'Notification preferences',
+      'allNotifications': 'All notifications',
+      'noNotifications': 'You are all caught up!',
+      'clearAll': 'Clear all',
+      'notifications.offer': 'New offers',
+      'notifications.offer.description':
+          'Get alerted when someone sends an offer on your listings.',
+      'notifications.wishlist': 'Wishlist',
+      'notifications.wishlist.description':
+          'Be notified when items you follow start accepting offers.',
+      'notifications.priceDrop': 'Price changes',
+      'notifications.priceDrop.description':
+          'Stay informed when a listed item updates its price.',
+      'notifications.newArrival': 'New arrivals',
+      'notifications.newArrival.description':
+          'Discover newly published pieces in your feed.',
+      'justNow': 'just now',
+      'minutesAgo': '{value} min ago',
+      'hoursAgo': '{value} h ago',
+      'daysAgo': '{value} d ago',
       'receivedOffer': 'Received Offer',
       'noPriceShown': 'No public price',
       'filters': 'Filters',
@@ -211,6 +275,7 @@ class AppLocalizations {
       'seeAll': 'See All',
       'sizeGuide': 'Size Guide',
       'searchHint': 'Search by name, gem, carat, description…',
+      'noSearchResults': 'No items match your search yet',
       'carCatalog': 'Car Catalog',
       'carCompare': 'Car Compare',
       'emptyCatalog': 'No items match your filters yet',
@@ -222,6 +287,7 @@ class AppLocalizations {
       'aiInsightDescription':
           'AI will soon describe gemstone and metal characteristics here.',
       'ok': 'OK',
+      'threeDUnavailable': '3D preview is unavailable right now',
       'showTutorialAgain': 'Replay walkthrough',
       'demoDataReset': 'Demo data has been refreshed.',
       'tutorialReset': 'Tutorial will show again next launch.',
@@ -258,9 +324,17 @@ class AppLocalizations {
     },
   };
 
-  String translate(String key) {
-    return _localizedValues[locale.languageCode]?[key] ??
+  String translate(String key, {Map<String, Object>? args}) {
+    final template = _localizedValues[locale.languageCode]?[key] ??
         _localizedValues['en']![key] ?? key;
+    if (args == null || args.isEmpty) {
+      return template;
+    }
+    var resolved = template;
+    args.forEach((placeholder, value) {
+      resolved = resolved.replaceAll('{${placeholder}}', value.toString());
+    });
+    return resolved;
   }
 
   static AppLocalizations of(BuildContext context) {

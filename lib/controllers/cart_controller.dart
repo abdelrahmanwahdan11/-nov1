@@ -19,6 +19,7 @@ class CartController extends ChangeNotifier {
   double get shipping => _shipping;
   double get discount => _discount;
   String? get coupon => _coupon;
+  int get totalItems => _items.fold(0, (sum, entry) => sum + entry.quantity);
 
   double get subtotal => _items.fold(0, (sum, entry) => sum + entry.lineTotal);
   double get total => (subtotal - _discount).clamp(0, double.infinity) + _shipping;

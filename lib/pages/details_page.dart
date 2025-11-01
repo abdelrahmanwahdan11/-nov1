@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 
 import '../controllers/controllers_scope.dart';
 import '../l10n/app_localizations.dart';
@@ -77,7 +78,7 @@ class DetailsPage extends StatelessWidget {
                       const SizedBox(height: 16),
                       _MetalSwatches(localization: localization),
                       const SizedBox(height: 24),
-                      _ThreeDPreview(tokens: tokens),
+                      _ThreeDPreview(tokens: tokens, modelUrl: item.model3d),
                       const SizedBox(height: 24),
                       Text(
                         localization.translate('details'),
@@ -368,26 +369,58 @@ class _MetalSwatches extends StatelessWidget {
   }
 }
 
-class _ThreeDPreview extends StatelessWidget {
-  const _ThreeDPreview({required this.tokens});
+class _ThreeDPreview extends StatefulWidget {
+  const _ThreeDPreview({required this.tokens, required this.modelUrl});
 
   final JewelThemeTokens? tokens;
+  final String modelUrl;
+
+  @override
+  State<_ThreeDPreview> createState() => _ThreeDPreviewState();
+}
+
+class _ThreeDPreviewState extends State<_ThreeDPreview> {
+  late final Flutter3dController _controller;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = Flutter3dController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _controller.setAutoRotate(true);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      height: 160,
+      height: 220,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(tokens?.cardRadius ?? 26),
-        color: theme.colorScheme.surface.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(widget.tokens?.cardRadius ?? 26),
+        color: theme.colorScheme.surface.withOpacity(0.65),
       ),
-      child: Center(
-        child: Text(
-          '3D Viewer placeholder',
-          style: theme.textTheme.bodyLarge?.copyWith(fontStyle: FontStyle.italic),
-        ),
-      ),
+      clipBehavior: Clip.antiAlias,
+      child: _hasError
+          ? Center(
+              child: Text(
+                AppLocalizations.of(context).translate('threeDUnavailable'),
+                textAlign: TextAlign.center,
+              ),
+            )
+          : Flutter3dViewer.network(
+              src: widget.modelUrl,
+              controller: _controller,
+              onLoading: (progress) {
+                if (!mounted) return;
+                if (progress == null) return;
+              },
+              onError: (error) {
+                if (!mounted) return;
+                setState(() => _hasError = true);
+              },
+            ),
     );
   }
 }

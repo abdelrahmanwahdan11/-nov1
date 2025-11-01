@@ -160,9 +160,33 @@ class CatalogController extends ChangeNotifier {
   }
 
   List<JewelryItem> _applyQuery(List<JewelryItem> source) {
+    return _applyQueryCustom(
+      source,
+      query: _query,
+      filters: _filters,
+      sortKey: _sort,
+    );
+  }
+
+  List<JewelryItem> searchIndex(String query) {
+    return _applyQueryCustom(
+      _composeSource(),
+      query: query,
+      filters: _filters,
+      sortKey: _sort,
+    );
+  }
+
+  List<JewelryItem> _applyQueryCustom(
+    List<JewelryItem> source, {
+    String? query,
+    Map<String, dynamic>? filters,
+    String? sortKey,
+  }) {
+    final activeFilters = filters ?? const <String, dynamic>{};
     Iterable<JewelryItem> list = source;
-    if (_query.isNotEmpty) {
-      final q = _query.toLowerCase();
+    final q = query?.toLowerCase();
+    if (q != null && q.isNotEmpty) {
       list = list.where((item) {
         final material = describeEnum(item.material);
         final condition = describeEnum(item.condition);
@@ -181,25 +205,25 @@ class CatalogController extends ChangeNotifier {
       });
     }
 
-    final categoryFilter = _filters['category'];
+    final categoryFilter = activeFilters['category'];
     if (categoryFilter is Iterable<JewelryCategory> && categoryFilter.isNotEmpty) {
       final set = categoryFilter.toSet();
       list = list.where((item) => set.contains(item.category));
     }
 
-    final materialFilter = _filters['material'];
+    final materialFilter = activeFilters['material'];
     if (materialFilter is Iterable<JewelryMaterial> && materialFilter.isNotEmpty) {
       final set = materialFilter.toSet();
       list = list.where((item) => set.contains(item.material));
     }
 
-    final conditionFilter = _filters['condition'];
+    final conditionFilter = activeFilters['condition'];
     if (conditionFilter is Iterable<JewelryCondition> && conditionFilter.isNotEmpty) {
       final set = conditionFilter.toSet();
       list = list.where((item) => set.contains(item.condition));
     }
 
-    final caratRange = _filters['carat'];
+    final caratRange = activeFilters['carat'];
     if (caratRange is Map<String, dynamic>) {
       final min = (caratRange['min'] as num?)?.toDouble();
       final max = (caratRange['max'] as num?)?.toDouble();
@@ -211,7 +235,7 @@ class CatalogController extends ChangeNotifier {
       }
     }
 
-    final priceRange = _filters['price'];
+    final priceRange = activeFilters['price'];
     if (priceRange is Map<String, dynamic>) {
       final min = (priceRange['min'] as num?)?.toDouble();
       final max = (priceRange['max'] as num?)?.toDouble();
@@ -230,14 +254,14 @@ class CatalogController extends ChangeNotifier {
       });
     }
 
-    final brandFilter = _filters['brand'];
+    final brandFilter = activeFilters['brand'];
     if (brandFilter is String && brandFilter.isNotEmpty) {
-      final q = brandFilter.toLowerCase();
-      list = list.where((item) => item.brand.toLowerCase().contains(q));
+      final bq = brandFilter.toLowerCase();
+      list = list.where((item) => item.brand.toLowerCase().contains(bq));
     }
 
     final sorted = list.toList();
-    switch (_sort) {
+    switch (sortKey) {
       case 'priceAsc':
         sorted.sort((a, b) {
           final aPrice = a.price ?? double.infinity;

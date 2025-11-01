@@ -52,27 +52,37 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     ),
                   ),
                 ),
-                child: Container(
+                child: Padding(
                   padding: const EdgeInsets.all(32),
-                  alignment: Alignment.bottomCenter,
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        slide.title,
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                      const SizedBox(height: 48),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              slide.title,
+                              textAlign: TextAlign.start,
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              slide.subtitle,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: Colors.white70,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        slide.subtitle,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.white70,
-                        ),
-                      ),
+                      const SizedBox(height: 120),
                     ],
                   ),
                 ),
