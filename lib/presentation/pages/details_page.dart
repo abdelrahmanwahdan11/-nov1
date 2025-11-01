@@ -12,14 +12,24 @@ import 'package:jewelx/domain/models/jewelry_item.dart';
 import 'package:jewelx/core/theme/app_theme.dart';
 import '../widgets/jewel_cached_image.dart';
 
-class DetailsPage extends StatelessWidget {
+class DetailsPage extends StatefulWidget {
   const DetailsPage({super.key});
 
   static const routeName = '/details';
 
   @override
+  State<DetailsPage> createState() => _DetailsPageState();
+}
+
+class _DetailsPageState extends State<DetailsPage> {
+  JewelryItem? _item;
+  String? _selectedSize;
+  String? _selectedMaterial;
+
+  @override
   Widget build(BuildContext context) {
-    final item = ModalRoute.of(context)?.settings.arguments as JewelryItem?;
+    _item ??= ModalRoute.of(context)?.settings.arguments as JewelryItem?;
+    final item = _item;
     if (item == null) {
       return const Scaffold(body: Center(child: Text('No item provided')));
     }
@@ -77,9 +87,17 @@ class DetailsPage extends StatelessWidget {
                       const SizedBox(height: 20),
                       _SpecsGrid(item: item, localization: localization),
                       const SizedBox(height: 24),
-                      _RingSizesSection(localization: localization),
+                      _RingSizesSection(
+                        localization: localization,
+                        selectedSize: _selectedSize,
+                        onSelect: (value) => setState(() => _selectedSize = value),
+                      ),
                       const SizedBox(height: 16),
-                      _MetalSwatches(localization: localization),
+                      _MetalSwatches(
+                        localization: localization,
+                        selectedColor: _selectedMaterial,
+                        onSelect: (value) => setState(() => _selectedMaterial = value),
+                      ),
                       const SizedBox(height: 24),
                       _ThreeDPreview(tokens: tokens, modelUrl: item.model3d),
                       const SizedBox(height: 24),
@@ -136,7 +154,17 @@ class DetailsPage extends StatelessWidget {
                     Expanded(
                       child: FilledButton(
                         onPressed: () {
-                          cart.add(item);
+                          final size = _selectedSize;
+                          final material = _selectedMaterial;
+                          if (size == null || material == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(localization.translate('selectSizeAndColor')),
+                              ),
+                            );
+                            return;
+                          }
+                          cart.add(item, size: size, color: material);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text(localization.translate('addedToCart'))),
                           );
@@ -283,9 +311,15 @@ class _ChipBadge extends StatelessWidget {
 }
 
 class _RingSizesSection extends StatelessWidget {
-  const _RingSizesSection({required this.localization});
+  const _RingSizesSection({
+    required this.localization,
+    required this.selectedSize,
+    required this.onSelect,
+  });
 
   final AppLocalizations localization;
+  final String? selectedSize;
+  final ValueChanged<String> onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -309,16 +343,39 @@ class _RingSizesSection extends StatelessWidget {
         const SizedBox(height: 12),
         Wrap(
           spacing: 12,
+          runSpacing: 10,
           children: sizes
               .map(
-                (size) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(tokens?.pillRadius ?? 18),
-                    color: theme.colorScheme.surface.withOpacity(0.7),
-                  ),
-                  child: Text(size, style: theme.textTheme.bodyMedium),
-                ),
+                (size) {
+                  final isSelected = selectedSize == size;
+                  return GestureDetector(
+                    onTap: () => onSelect(size),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(tokens?.pillRadius ?? 18),
+                        color: isSelected
+                            ? theme.colorScheme.primary.withOpacity(0.18)
+                            : theme.colorScheme.surface.withOpacity(0.7),
+                        border: Border.all(
+                          color:
+                              isSelected ? theme.colorScheme.primary : Colors.transparent,
+                          width: 1.6,
+                        ),
+                      ),
+                      child: Text(
+                        size,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               )
               .toList(),
         ),
@@ -328,18 +385,24 @@ class _RingSizesSection extends StatelessWidget {
 }
 
 class _MetalSwatches extends StatelessWidget {
-  const _MetalSwatches({required this.localization});
+  const _MetalSwatches({
+    required this.localization,
+    required this.selectedColor,
+    required this.onSelect,
+  });
 
   final AppLocalizations localization;
+  final String? selectedColor;
+  final ValueChanged<String> onSelect;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = [
-      Colors.amber[200]!,
-      Colors.grey[300]!,
-      Colors.pink[100]!,
-      Colors.blueGrey[200]!,
+    final options = [
+      _MetalOption('gold', const [Color(0xFFF9D976), Color(0xFFF39F86)]),
+      _MetalOption('silver', const [Color(0xFFE6E9F0), Color(0xFFCFD9DF)]),
+      _MetalOption('roseGold', const [Color(0xFFFAD0C4), Color(0xFFFFD1FF)]),
+      _MetalOption('platinum', const [Color(0xFFD7E1EC), Color(0xFFF2F6FF)]),
     ];
 
     return Column(
@@ -348,30 +411,66 @@ class _MetalSwatches extends StatelessWidget {
         Text(localization.translate('metalColor'), style: theme.textTheme.titleMedium),
         const SizedBox(height: 12),
         Wrap(
-          spacing: 12,
-          children: colors
+          spacing: 18,
+          runSpacing: 16,
+          children: options
               .map(
-                (color) => Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [color, color.withOpacity(0.6)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, 4)),
+                (option) {
+                  final isSelected = selectedColor == option.key;
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      GestureDetector(
+                        onTap: () => onSelect(option.key),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(colors: option.gradient),
+                            border: Border.all(
+                              color: isSelected
+                                  ? theme.colorScheme.primary
+                                  : Colors.transparent,
+                              width: 2.4,
+                            ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: theme.colorScheme.primary.withOpacity(0.25),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 6),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: isSelected
+                              ? Icon(Icons.check, color: theme.colorScheme.onPrimary)
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        localization.translate(option.key),
+                        style: theme.textTheme.bodySmall,
+                      ),
                     ],
-                  ),
-                ),
+                  );
+                },
               )
               .toList(),
         ),
       ],
     );
   }
+}
+
+class _MetalOption {
+  const _MetalOption(this.key, this.gradient);
+
+  final String key;
+  final List<Color> gradient;
 }
 
 class _ThreeDPreview extends StatefulWidget {

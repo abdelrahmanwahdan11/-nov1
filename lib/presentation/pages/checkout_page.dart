@@ -131,6 +131,25 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             '${localization.translate('currencySymbol')}${entry.item.price?.toStringAsFixed(2) ?? '0.00'}',
                             style: theme.textTheme.bodyMedium,
                           ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              Chip(
+                                label: Text(
+                                  '${localization.translate('ringSize')}: ${entry.selectedSize}',
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ),
+                              Chip(
+                                label: Text(
+                                  localization.translate(entry.selectedColor),
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),

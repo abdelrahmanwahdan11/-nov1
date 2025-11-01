@@ -24,21 +24,30 @@ class CartController extends ChangeNotifier {
   double get subtotal => _items.fold(0, (sum, entry) => sum + entry.lineTotal);
   double get total => (subtotal - _discount).clamp(0, double.infinity) + _shipping;
 
-  void add(JewelryItem item) {
-    final existingIndex = _items.indexWhere((entry) => entry.item.id == item.id);
+  void add(JewelryItem item, {required String size, required String color}) {
+    final normalizedSize = size.trim();
+    final normalizedColor = color.trim();
+    final key = '${item.id}::$normalizedSize::$normalizedColor';
+    final existingIndex = _items.indexWhere((entry) => entry.key == key);
     if (existingIndex >= 0) {
-      _items[existingIndex] = _items[existingIndex].copyWith(
-        quantity: _items[existingIndex].quantity + 1,
-      );
+      _items[existingIndex] =
+          _items[existingIndex].copyWith(quantity: _items[existingIndex].quantity + 1);
     } else {
-      _items.add(CartEntry(item: item, quantity: 1));
+      _items.add(
+        CartEntry(
+          item: item,
+          quantity: 1,
+          selectedSize: normalizedSize,
+          selectedColor: normalizedColor,
+        ),
+      );
     }
     _recalculateDiscount();
     notifyListeners();
   }
 
-  void remove(String id) {
-    _items.removeWhere((entry) => entry.item.id == id);
+  void removeEntry(CartEntry entry) {
+    _items.removeWhere((element) => element.key == entry.key);
     _recalculateDiscount();
     notifyListeners();
   }
@@ -51,11 +60,11 @@ class CartController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setQty(String id, int quantity) {
-    final index = _items.indexWhere((entry) => entry.item.id == id);
+  void setQtyForEntry(CartEntry entry, int quantity) {
+    final index = _items.indexWhere((element) => element.key == entry.key);
     if (index == -1) return;
     if (quantity <= 0) {
-      remove(id);
+      removeEntry(entry);
       return;
     }
     _items[index] = _items[index].copyWith(quantity: quantity);

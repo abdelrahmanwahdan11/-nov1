@@ -74,9 +74,9 @@ class _CartPageState extends State<CartPage> {
                         entry: entry,
                         tokens: tokens,
                         localization: localization,
-                        onIncrement: () => cart.setQty(entry.item.id, entry.quantity + 1),
-                        onDecrement: () => cart.setQty(entry.item.id, entry.quantity - 1),
-                        onRemove: () => cart.remove(entry.item.id),
+                        onIncrement: () => cart.setQtyForEntry(entry, entry.quantity + 1),
+                        onDecrement: () => cart.setQtyForEntry(entry, entry.quantity - 1),
+                        onRemove: () => cart.removeEntry(entry),
                       ),
                     );
                   },
@@ -178,6 +178,23 @@ class _CartTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(priceText, style: theme.textTheme.bodyMedium),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      _InfoChip(
+                        label: '${localization.translate('ringSize')}: ${entry.selectedSize}',
+                        tokens: tokens,
+                        theme: theme,
+                      ),
+                      _InfoChip(
+                        label: localization.translate(entry.selectedColor),
+                        tokens: tokens,
+                        theme: theme,
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -225,6 +242,35 @@ class _QtyButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Icon(icon, size: 18, color: theme.colorScheme.primary),
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({
+    required this.label,
+    required this.tokens,
+    required this.theme,
+  });
+
+  final String label;
+  final JewelThemeTokens? tokens;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withOpacity(0.65),
+        borderRadius: BorderRadius.circular((tokens?.pillRadius ?? 18) - 4),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+        ),
       ),
     );
   }
