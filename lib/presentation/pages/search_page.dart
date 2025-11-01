@@ -52,7 +52,9 @@ class _SearchPageState extends State<SearchPage> {
     final scope = ControllersScope.of(context);
     final catalog = scope.catalogController;
     final savedSearches = scope.savedSearchesController;
+    final history = scope.browsingHistoryController;
     final t = AppLocalizations.of(context);
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -98,6 +100,46 @@ class _SearchPageState extends State<SearchPage> {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 12),
+          AnimatedBuilder(
+            animation: history,
+            builder: (context, _) {
+              final recents = history.recentItems(limit: 6);
+              if (recents.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      t.translate('recentlyViewed'),
+                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final item in recents)
+                          ActionChip(
+                            label: Text(item.name),
+                            onPressed: () {
+                              final query = item.name;
+                              _controller
+                                ..text = query
+                                ..selection = TextSelection.fromPosition(TextPosition(offset: query.length));
+                              _triggerSearch(catalog, query, immediate: true);
+                            },
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
           const SizedBox(height: 12),
           Expanded(

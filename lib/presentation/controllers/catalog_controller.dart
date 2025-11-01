@@ -52,6 +52,79 @@ class CatalogController extends ChangeNotifier {
 
   List<JewelryItem> composeSource() => List.unmodifiable(_composeSource());
 
+  JewelryItem? findById(String id) {
+    for (final item in _composeSource()) {
+      if (item.id == id) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  List<JewelryItem> itemsByIds(Iterable<String> ids) {
+    if (ids.isEmpty) return const [];
+    final map = {
+      for (final item in _composeSource()) item.id: item,
+    };
+    final results = <JewelryItem>[];
+    for (final id in ids) {
+      final item = map[id];
+      if (item != null) {
+        results.add(item);
+      }
+    }
+    return results;
+  }
+
+  List<JewelryItem> recommendedItems({
+    int limit = 6,
+    Iterable<String> recentIds = const <String>[],
+    Iterable<String>? excludeIds,
+  }) {
+    if (limit <= 0) return const [];
+    final source = _composeSource();
+    if (source.isEmpty) return const [];
+
+    final exclude = <String>{
+      for (final id in (excludeIds ?? const <String>[])) id,
+    };
+    final result = <JewelryItem>[];
+    final lookup = {for (final item in source) item.id: item};
+
+    void addCandidate(String id) {
+      if (exclude.contains(id)) return;
+      final item = lookup[id];
+      if (item != null && result.every((element) => element.id != id)) {
+        result.add(item);
+      }
+    }
+
+    for (final id in _favorites) {
+      addCandidate(id);
+      if (result.length >= limit) {
+        return result.take(limit).toList();
+      }
+    }
+
+    for (final id in recentIds) {
+      addCandidate(id);
+      if (result.length >= limit) {
+        return result.take(limit).toList();
+      }
+    }
+
+    final remaining = source
+        .where((item) => !exclude.contains(item.id) && result.every((existing) => existing.id != item.id))
+        .toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    result.addAll(remaining);
+    if (result.length > limit) {
+      result.removeRange(limit, result.length);
+    }
+    return result;
+  }
+
   Future<void> initialize() async {
     if (_initialized) {
       await loadInitial();

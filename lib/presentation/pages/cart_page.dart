@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../controllers/controllers_scope.dart';
 import 'package:jewelx/core/i18n/app_localizations.dart';
 import 'package:jewelx/domain/models/cart_entry.dart';
+import 'package:jewelx/domain/models/jewelry_item.dart';
 import 'package:jewelx/core/theme/app_theme.dart';
 import '../widgets/jewel_cached_image.dart';
 
@@ -27,14 +28,23 @@ class _CartPageState extends State<CartPage> {
   Widget build(BuildContext context) {
     final scope = ControllersScope.of(context);
     final cart = scope.cartController;
+    final catalog = scope.catalogController;
+    final history = scope.browsingHistoryController;
     final localization = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final tokens = theme.extension<JewelThemeTokens>();
 
+    final listenable = Listenable.merge([cart, catalog, history]);
+
     return AnimatedBuilder(
-      animation: cart,
+      animation: listenable,
       builder: (context, _) {
         final items = cart.items;
+        final recommendations = catalog.recommendedItems(
+          limit: 6,
+          recentIds: history.recentIds,
+          excludeIds: items.map((entry) => entry.item.id),
+        );
         Widget body;
         if (items.isEmpty) {
           body = Center(
@@ -63,23 +73,32 @@ class _CartPageState extends State<CartPage> {
           body = Column(
             children: [
               Expanded(
-                child: ListView.builder(
+                child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final entry = items[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _CartTile(
-                        entry: entry,
-                        tokens: tokens,
-                        localization: localization,
-                        onIncrement: () => cart.setQtyForEntry(entry, entry.quantity + 1),
-                        onDecrement: () => cart.setQtyForEntry(entry, entry.quantity - 1),
-                        onRemove: () => cart.removeEntry(entry),
+                  children: [
+                    for (final entry in items)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _CartTile(
+                          entry: entry,
+                          tokens: tokens,
+                          localization: localization,
+                          onIncrement: () => cart.setQtyForEntry(entry, entry.quantity + 1),
+                          onDecrement: () => cart.setQtyForEntry(entry, entry.quantity - 1),
+                          onRemove: () => cart.removeEntry(entry),
+                        ),
                       ),
-                    );
-                  },
+                    if (recommendations.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: _CartRecommendations(
+                          items: recommendations,
+                          localization: localization,
+                          tokens: tokens,
+                          onTap: (item) => Navigator.of(context).pushNamed('/details', arguments: item),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               _CartSummary(
@@ -120,6 +139,98 @@ class _CartPageState extends State<CartPage> {
           body: SafeArea(child: body),
         );
       },
+    );
+  }
+}
+
+class _CartRecommendations extends StatelessWidget {
+  const _CartRecommendations({
+    required this.items,
+    required this.localization,
+    required this.tokens,
+    required this.onTap,
+  });
+
+  final List<JewelryItem> items;
+  final AppLocalizations localization;
+  final JewelThemeTokens? tokens;
+  final ValueChanged<JewelryItem> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final radius = tokens?.cardRadius ?? 26;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          localization.translate('youMayAlsoLike'),
+          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 180,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 16),
+            itemBuilder: (context, index) {
+              final item = items[index];
+              final price = item.price;
+              final priceText = price != null
+                  ? '${localization.translate('currencySymbol')}${price.toStringAsFixed(0)}'
+                  : localization.translate('priceOnRequest');
+              return InkWell(
+                onTap: () => onTap(item),
+                borderRadius: BorderRadius.circular(radius),
+                child: Container(
+                  width: 160,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(radius),
+                    boxShadow: tokens?.softShadow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(radius),
+                          topRight: Radius.circular(radius),
+                        ),
+                        child: JewelCachedImage(
+                          imageUrl: item.images.isNotEmpty
+                              ? item.images.first
+                              : 'https://picsum.photos/seed/cart-reco-${item.id}/300/300',
+                          height: 110,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+                        child: Text(
+                          item.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          priceText,
+                          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.primary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

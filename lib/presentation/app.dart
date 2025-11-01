@@ -13,6 +13,7 @@ import 'controllers/messages_controller.dart';
 import 'controllers/my_items_controller.dart';
 import 'controllers/notification_controller.dart';
 import 'controllers/scroll_memory.dart';
+import 'controllers/browsing_history_controller.dart';
 import 'package:jewelx/core/i18n/app_localizations.dart';
 import 'pages/auth/forgot_password_page.dart';
 import 'pages/auth/sign_in_page.dart';
@@ -59,6 +60,7 @@ class _JewelXAppState extends State<JewelXApp> {
   final NotificationController _notificationController = NotificationController();
   final SavedSearchesController _savedSearchesController = SavedSearchesController();
   final ScrollMemory _scrollMemory = ScrollMemory();
+  final BrowsingHistoryController _browsingHistoryController = BrowsingHistoryController();
   bool _initialized = false;
 
   @override
@@ -73,12 +75,14 @@ class _JewelXAppState extends State<JewelXApp> {
     _savedSearchesController
       ..bindCatalog(_catalogController)
       ..bindNotifications(_notificationController);
+    _browsingHistoryController.bindCatalog(_catalogController);
     await Future.wait([
       _appController.initialize(),
       _authController.initialize(),
       _catalogController.initialize(),
       _messagesController.loadFromPrefs(),
       _savedSearchesController.initialize(),
+      _browsingHistoryController.initialize(),
       _scrollMemory.initialize(),
     ]);
     setState(() => _initialized = true);
@@ -97,6 +101,7 @@ class _JewelXAppState extends State<JewelXApp> {
     _notificationController.dispose();
     _savedSearchesController.dispose();
     _scrollMemory.dispose();
+    _browsingHistoryController.dispose();
     super.dispose();
   }
 
@@ -131,6 +136,7 @@ class _JewelXAppState extends State<JewelXApp> {
       messagesController: _messagesController,
       notificationController: _notificationController,
       savedSearchesController: _savedSearchesController,
+      browsingHistoryController: _browsingHistoryController,
       scrollMemory: _scrollMemory,
       child: AnimatedBuilder(
         animation: _appController,

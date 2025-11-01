@@ -29,6 +29,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final controllers = ControllersScope.of(context);
     final appController = controllers.appController;
     final authController = controllers.authController;
+    final historyController = controllers.browsingHistoryController;
     final localization = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final tokens = theme.extension<JewelThemeTokens>();
@@ -42,7 +43,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       appBar: AppBar(title: Text(localization.translate('settings'))),
       body: AnimatedBuilder(
-        animation: Listenable.merge([appController, authController]),
+        animation: Listenable.merge([appController, authController, historyController]),
         builder: (context, _) {
           final user = authController.currentUser;
           final locales = AppLocalizations.supportedLocales;
@@ -174,6 +175,24 @@ class _SettingsPageState extends State<SettingsPage> {
                       title: Text(localization.translate('savedSearches')),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.of(context).pushNamed(SavedSearchesPage.routeName),
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.history_toggle_off),
+                      title: Text(localization.translate('recentlyViewed')),
+                      subtitle: Text(localization.translate('recentlyViewedSubtitle')),
+                      trailing: TextButton(
+                        onPressed: historyController.recentIds.isEmpty
+                            ? null
+                            : () async {
+                                await historyController.clear();
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(localization.translate('historyCleared'))),
+                                );
+                              },
+                        child: Text(localization.translate('clearHistory')),
+                      ),
                     ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,

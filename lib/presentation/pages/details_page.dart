@@ -25,10 +25,24 @@ class _DetailsPageState extends State<DetailsPage> {
   JewelryItem? _item;
   String? _selectedSize;
   String? _selectedMaterial;
+  bool _viewLogged = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is JewelryItem && _item == null) {
+      _item = args;
+    }
+    final item = _item;
+    if (item != null && !_viewLogged) {
+      ControllersScope.of(context).browsingHistoryController.registerView(item.id);
+      _viewLogged = true;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    _item ??= ModalRoute.of(context)?.settings.arguments as JewelryItem?;
     final item = _item;
     if (item == null) {
       return const Scaffold(body: Center(child: Text('No item provided')));

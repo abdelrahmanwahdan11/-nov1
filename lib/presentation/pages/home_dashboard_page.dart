@@ -60,17 +60,25 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   Widget build(BuildContext context) {
     final controllers = ControllersScope.of(context);
     final catalog = controllers.catalogController;
+    final history = controllers.browsingHistoryController;
     final localization = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final tokens = theme.extension<JewelThemeTokens>();
+    final listenable = Listenable.merge([catalog, history]);
 
     return SafeArea(
       bottom: false,
       child: AnimatedBuilder(
-        animation: catalog,
+        animation: listenable,
         builder: (context, _) {
           final items = catalog.items;
           final isLoading = catalog.isLoading && items.isEmpty;
+          final recent = history.recentItems(limit: 8);
+          final recommended = catalog.recommendedItems(
+            limit: 8,
+            recentIds: history.recentIds,
+            excludeIds: recent.map((item) => item.id),
+          );
           return RefreshIndicator(
             color: theme.colorScheme.primary,
             onRefresh: catalog.refresh,
@@ -100,6 +108,20 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                       ),
                     ),
                   ),
+                  if (recent.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 8, 0, 12),
+                        child: _RecentRail(
+                          items: recent,
+                          localization: localization,
+                          tokens: tokens,
+                          onClear: () => history.clear(),
+                          onOpen: _openDetails,
+                          onQuickLook: _openQuickLook,
+                        ),
+                      ),
+                    ),
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -115,6 +137,18 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                       child: _AiInsightButton(localization: localization),
                     ),
                   ),
+                  if (recommended.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                        child: _RecommendationRail(
+                          items: recommended,
+                          localization: localization,
+                          tokens: tokens,
+                          onTap: _openDetails,
+                        ),
+                      ),
+                    ),
                   if (isLoading)
                     _SkeletonGrid(tokens: tokens)
                   else if (items.isEmpty)
@@ -170,6 +204,231 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
           child: child,
         );
       },
+    );
+  }
+
+  void _openDetails(JewelryItem item) {
+    Navigator.of(context).pushNamed('/details', arguments: item);
+  }
+}
+
+class _RecentRail extends StatelessWidget {
+  const _RecentRail({
+    required this.items,
+    required this.localization,
+    required this.tokens,
+    required this.onClear,
+    required this.onOpen,
+    required this.onQuickLook,
+  });
+
+  final List<JewelryItem> items;
+  final AppLocalizations localization;
+  final JewelThemeTokens? tokens;
+  final VoidCallback onClear;
+  final ValueChanged<JewelryItem> onOpen;
+  final ValueChanged<JewelryItem> onQuickLook;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final radius = tokens?.cardRadius ?? 26;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              localization.translate('recentlyViewed'),
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: onClear,
+              child: Text(localization.translate('clearHistory')),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 176,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(right: 20),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final item = items[index];
+              return InkWell(
+                borderRadius: BorderRadius.circular(radius),
+                onTap: () => onOpen(item),
+                child: Container(
+                  width: 150,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface.withOpacity(0.85),
+                    borderRadius: BorderRadius.circular(radius),
+                    boxShadow: tokens?.softShadow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(radius),
+                          topRight: Radius.circular(radius),
+                        ),
+                        child: JewelCachedImage(
+                          imageUrl: item.images.isNotEmpty
+                              ? item.images.first
+                              : 'https://picsum.photos/seed/${item.id}/300/300',
+                          height: 110,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              const Spacer(),
+                              Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: TextButton(
+                                  style: TextButton.styleFrom(
+                                    minimumSize: const Size(0, 32),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  ),
+                                  onPressed: () => onQuickLook(item),
+                                  child: Text(localization.translate('quickLook')),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RecommendationRail extends StatelessWidget {
+  const _RecommendationRail({
+    required this.items,
+    required this.localization,
+    required this.tokens,
+    required this.onTap,
+  });
+
+  final List<JewelryItem> items;
+  final AppLocalizations localization;
+  final JewelThemeTokens? tokens;
+  final ValueChanged<JewelryItem> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final radius = tokens?.cardRadius ?? 26;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              localization.translate('recommendedForYou'),
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 210,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(right: 4),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 16),
+            itemBuilder: (context, index) {
+              final item = items[index];
+              final price = item.price;
+              final priceText = price != null
+                  ? '${localization.translate('currencySymbol')}${price.toStringAsFixed(0)}'
+                  : localization.translate('priceOnRequest');
+              return InkWell(
+                onTap: () => onTap(item),
+                borderRadius: BorderRadius.circular(radius),
+                child: Container(
+                  width: 180,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(radius),
+                    boxShadow: tokens?.softShadow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(radius),
+                          topRight: Radius.circular(radius),
+                        ),
+                        child: JewelCachedImage(
+                          imageUrl: item.images.isNotEmpty
+                              ? item.images.first
+                              : 'https://picsum.photos/seed/reco-${item.id}/300/300',
+                          height: 120,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+                        child: Text(
+                          item.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          '${item.brand} • ${localization.translate(item.material.name)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary),
+                        ),
+                      ),
+                      const Spacer(),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                        child: Text(
+                          priceText,
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
