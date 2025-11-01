@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../controllers/app_controller.dart';
 import '../controllers/controllers_scope.dart';
-import '../controllers/theme_controller.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
@@ -11,13 +11,13 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controllers = ControllersScope.of(context);
-    final themeController = controllers.themeController;
+    final appController = controllers.appController;
     final localization = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final tokens = theme.extension<JewelThemeTokens>();
 
     return AnimatedBuilder(
-      animation: themeController,
+      animation: appController,
       builder: (context, _) {
         return ListView(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
@@ -25,8 +25,8 @@ class SettingsPage extends StatelessWidget {
             _SettingCard(
               tokens: tokens,
               child: SwitchListTile(
-                value: themeController.isDark,
-                onChanged: (_) => themeController.toggleDarkMode(),
+                value: appController.isDark,
+                onChanged: (_) => appController.toggleDarkMode(),
                 title: Text(localization.translate('darkMode')),
                 secondary: const Icon(Icons.nightlight_round),
               ),
@@ -36,10 +36,10 @@ class SettingsPage extends StatelessWidget {
               tokens: tokens,
               child: ListTile(
                 title: Text(localization.translate('primaryColor')),
-                subtitle: Text('#${themeController.primaryColor.value.toRadixString(16).padLeft(8, '0')}'),
-                leading: CircleAvatar(backgroundColor: themeController.primaryColor),
+                subtitle: Text('#${appController.primaryColor.value.toRadixString(16).padLeft(8, '0')}'),
+                leading: CircleAvatar(backgroundColor: appController.primaryColor),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => _pickPrimaryColor(context, themeController, localization),
+                onTap: () => _pickPrimaryColor(context, appController, localization),
               ),
             ),
             const SizedBox(height: 16),
@@ -47,10 +47,10 @@ class SettingsPage extends StatelessWidget {
               tokens: tokens,
               child: ListTile(
                 title: Text(localization.translate('language')),
-                subtitle: Text(themeController.locale.languageCode),
+                subtitle: Text(appController.locale.languageCode),
                 leading: const Icon(Icons.language),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => _pickLanguage(context, themeController, localization),
+                onTap: () => _pickLanguage(context, appController, localization),
               ),
             ),
             const SizedBox(height: 16),
@@ -72,12 +72,7 @@ class SettingsPage extends StatelessWidget {
               child: ListTile(
                 title: Text(localization.translate('showTutorialAgain')),
                 leading: const Icon(Icons.school),
-                onTap: () async {
-                  await themeController.resetTutorialFlag();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(localization.translate('tutorialReset'))),
-                  );
-                },
+                onTap: () => Navigator.of(context).pushNamed('/tutorial'),
               ),
             ),
           ],
@@ -88,7 +83,7 @@ class SettingsPage extends StatelessWidget {
 
   Future<void> _pickPrimaryColor(
     BuildContext context,
-    ThemeController controller,
+    AppController controller,
     AppLocalizations localization,
   ) async {
     final palette = [
@@ -123,7 +118,7 @@ class SettingsPage extends StatelessWidget {
 
   Future<void> _pickLanguage(
     BuildContext context,
-    ThemeController controller,
+    AppController controller,
     AppLocalizations localization,
   ) async {
     await showModalBottomSheet<void>(

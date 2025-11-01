@@ -22,6 +22,8 @@ class DetailsPage extends StatelessWidget {
     final scope = ControllersScope.of(context);
     final catalog = scope.catalogController;
     final compare = scope.compareController;
+    final cart = scope.cartController;
+    final messages = scope.messagesController;
     final theme = Theme.of(context);
     final tokens = theme.extension<JewelThemeTokens>();
     final localization = AppLocalizations.of(context);
@@ -115,10 +117,24 @@ class DetailsPage extends StatelessWidget {
                       onTap: () => compare.toggle(item.id),
                       active: isCompared,
                     ),
+                    const SizedBox(width: 12),
+                    _BottomAction(
+                      icon: Icons.chat_bubble_outline,
+                      label: localization.translate('contactSeller'),
+                      onTap: () {
+                        messages.openThread(item.id, item.name);
+                        Navigator.of(context).pushNamed('/messages', arguments: item.id);
+                      },
+                    ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: FilledButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          cart.add(item);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(localization.translate('addedToCart'))),
+                          );
+                        },
                         style: FilledButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: Colors.black,

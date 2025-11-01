@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../controllers/controllers_scope.dart';
 import '../l10n/app_localizations.dart';
@@ -32,20 +33,26 @@ class HomeDashboardPage extends StatelessWidget {
               physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
               children: [
-                _HeroShowcase(tokens: tokens),
+                _HeroShowcase(tokens: tokens)
+                    .animate()
+                    .fadeIn(duration: 400.ms)
+                    .slide(begin: const Offset(0, 0.15)),
                 const SizedBox(height: 28),
                 _BrandRail(
                   tokens: tokens,
                   onBrandSelected: (brand) => catalog.search(brand),
-                ),
+                ).animate().fadeIn(duration: 350.ms).moveY(begin: 12, end: 0),
                 const SizedBox(height: 32),
                 _NewArrivalsCarousel(
                   items: items,
                   localization: localization,
                   tokens: tokens,
-                ),
+                ).animate().fadeIn(duration: 350.ms).moveY(begin: 20, end: 0),
                 const SizedBox(height: 28),
-                _AiInsightButton(localization: localization),
+                _AiInsightButton(localization: localization)
+                    .animate()
+                    .fadeIn(duration: 300.ms)
+                    .moveY(begin: 20, end: 0),
               ],
             );
           },

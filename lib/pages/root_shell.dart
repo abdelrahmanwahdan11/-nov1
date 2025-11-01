@@ -51,6 +51,11 @@ class _RootShellState extends State<RootShell> {
         centerTitle: false,
         actions: [
           _RoundedAction(
+            icon: Icons.shopping_bag_outlined,
+            onTap: () => Navigator.of(context).pushNamed('/cart'),
+          ),
+          const SizedBox(width: 12),
+          _RoundedAction(
             icon: IconlyBold.notification,
             onTap: () => Navigator.of(context).pushNamed('/notifications'),
           ),

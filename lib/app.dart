@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'controllers/app_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/catalog_controller.dart';
+import 'controllers/cart_controller.dart';
+import 'controllers/checkout_controller.dart';
 import 'controllers/compare_controller.dart';
 import 'controllers/controllers_scope.dart';
+import 'controllers/messages_controller.dart';
 import 'controllers/my_items_controller.dart';
 import 'controllers/notification_controller.dart';
-import 'controllers/theme_controller.dart';
 import 'l10n/app_localizations.dart';
 import 'pages/auth/forgot_password_page.dart';
 import 'pages/auth/sign_in_page.dart';
@@ -19,6 +22,7 @@ import 'pages/catalog_page.dart';
 import 'pages/details_page.dart';
 import 'pages/favorites_page.dart';
 import 'pages/home_dashboard_page.dart';
+import 'pages/messages_page.dart';
 import 'pages/my_items_page.dart';
 import 'pages/notifications_page.dart';
 import 'pages/profile_page.dart';
@@ -28,6 +32,7 @@ import 'pages/settings_page.dart';
 import 'pages/splash_page.dart';
 import 'theme/app_theme.dart';
 import 'pages/onboarding_page.dart';
+import 'pages/checkout_page.dart';
 
 class JewelXApp extends StatefulWidget {
   const JewelXApp({super.key});
@@ -37,11 +42,14 @@ class JewelXApp extends StatefulWidget {
 }
 
 class _JewelXAppState extends State<JewelXApp> {
-  final ThemeController _themeController = ThemeController();
+  final AppController _appController = AppController();
   final AuthController _authController = AuthController();
   final CatalogController _catalogController = CatalogController();
   final CompareController _compareController = CompareController();
   final MyItemsController _myItemsController = MyItemsController();
+  final CartController _cartController = CartController();
+  final CheckoutController _checkoutController = CheckoutController();
+  final MessagesController _messagesController = MessagesController();
   final NotificationController _notificationController = NotificationController();
   bool _initialized = false;
 
@@ -55,20 +63,24 @@ class _JewelXAppState extends State<JewelXApp> {
     _catalogController.bindMyItems(_myItemsController);
     _myItemsController.bindNotificationController(_notificationController);
     await Future.wait([
-      _themeController.initialize(),
+      _appController.initialize(),
       _authController.initialize(),
       _catalogController.initialize(),
+      _messagesController.loadFromPrefs(),
     ]);
     setState(() => _initialized = true);
   }
 
   @override
   void dispose() {
-    _themeController.dispose();
+    _appController.dispose();
     _authController.dispose();
     _catalogController.dispose();
     _compareController.dispose();
     _myItemsController.dispose();
+    _cartController.dispose();
+    _checkoutController.dispose();
+    _messagesController.dispose();
     _notificationController.dispose();
     super.dispose();
   }
@@ -79,17 +91,20 @@ class _JewelXAppState extends State<JewelXApp> {
       return const MaterialApp(home: SizedBox.shrink());
     }
     return ControllersScope(
-      themeController: _themeController,
+      appController: _appController,
       authController: _authController,
       catalogController: _catalogController,
       compareController: _compareController,
       myItemsController: _myItemsController,
+      cartController: _cartController,
+      checkoutController: _checkoutController,
+      messagesController: _messagesController,
       notificationController: _notificationController,
       child: AnimatedBuilder(
-        animation: _themeController,
+        animation: _appController,
         builder: (context, _) {
-          final primary = _themeController.primaryColor;
-          final locale = _themeController.locale;
+          final primary = _appController.primaryColor;
+          final locale = _appController.locale;
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'JewelX',
@@ -103,7 +118,7 @@ class _JewelXAppState extends State<JewelXApp> {
             ],
             theme: AppTheme.light(primary),
             darkTheme: AppTheme.dark(primary),
-            themeMode: _themeController.isDark ? ThemeMode.dark : ThemeMode.light,
+            themeMode: _appController.isDark ? ThemeMode.dark : ThemeMode.light,
             initialRoute: SplashPage.routeName,
             routes: {
               SplashPage.routeName: (context) => const SplashPage(),
@@ -120,6 +135,8 @@ class _JewelXAppState extends State<JewelXApp> {
               '/catalog/cars': (context) => const CarsCatalogPage(),
               '/favorites': (context) => const FavoritesPage(),
               '/cart': (context) => const CartPage(),
+              '/checkout': (context) => const CheckoutPage(),
+              '/messages': (context) => const MessagesPage(),
               '/notifications': (context) => const NotificationsPage(),
               '/settings': (context) => const SettingsPage(),
               '/my-items': (context) => const MyItemsPage(),

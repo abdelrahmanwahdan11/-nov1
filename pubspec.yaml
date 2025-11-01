@@ -1,10 +1,11 @@
 name: jewelx
-description: "سوق مجوهرات جديدة ومستعملة مع عارض 3D، انتقالات Material، Skeletons، بحث/فلاتر/مقارنة، إضافة مقتنيات شخصية، وثيم وردي-خوخي."
+description: "سوق مجوهرات (جديد/مستعمل) مع 3D، ثيم وردي–خوخي مطابق للصورة، سلة وCheckout محلي، تواصل مع البائع، مقارنة، فلاتر، بحث شامل، Dark Mode، ولغتين AR/EN."
 publish_to: 'none'
-version: 4.0.0+1
+version: 5.0.0+1
 
 environment:
-  sdk: '>=3.16.0 <4.0.0'
+  sdk: '>=3.9.0 <4.0.0'
+  flutter: '>=3.35.0'
 
 dependencies:
   flutter:
@@ -15,7 +16,7 @@ dependencies:
   shared_preferences: ^2.2.2
   iconly: ^1.0.1
   flutter_3d_controller: ^0.0.1
-  animations: ^2.0.11
+  flutter_animate: 4.5.2
   tutorial_coach_mark: ^1.2.11
 
 dev_dependencies:
